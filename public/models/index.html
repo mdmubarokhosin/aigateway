@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Models — Live Catalog | AI Gateway API</title>
+  <meta name="description" content="Live AI model catalog, auto-fetched from every configured provider. OpenRouter and OpenCode Zen list only their free models; other providers list everything." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>(function(){try{if(localStorage.getItem('aigw-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body data-page="models">
+  <div id="site-header"></div>
+
+  <main>
+    <section class="section" style="padding-top:44px">
+      <div class="container">
+        <span class="eyebrow" data-i18n="md.eyebrow">Live model catalog</span>
+        <h1 class="section-title" style="font-size:2rem"><span data-i18n="md.title1">Every model,</span> <span class="grad-text" data-i18n="md.title2">auto-fetched</span></h1>
+        <p class="section-sub" style="max-width:760px" data-i18n-html="md.subtitle">
+          This catalog is fetched <strong>live from each provider</strong> through <code class="code-inline">GET /api/v1/models</code> — nothing is hardcoded.
+          Policy: <strong>OpenRouter</strong> and <strong>OpenCode Zen</strong> list only their <span class="badge free">free</span> models;
+          every other provider lists its <strong>full catalog</strong>. Results are cached server-side (default 6 h) and refreshed on demand.
+        </p>
+
+        <div class="models-toolbar">
+          <input class="input models-search" id="models-search" type="search"
+                 placeholder="Search models… (e.g. glm, deepseek, laguna)" data-i18n-ph="md.search" aria-label="Search models" />
+          <button class="btn btn-ghost btn-sm" id="models-refresh" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2.1 21 6l-4 3.9"/><path d="M3 12V9a3 3 0 0 1 3-3h14.9"/><path d="M7 21.9 3 18l4-3.9"/><path d="M21 12v3a3 3 0 0 1-3 3H3.1"/></svg>
+            <span data-i18n="md.refresh">Refresh from providers</span>
+          </button>
+        </div>
+
+        <div class="chip-row" id="provider-chips" style="margin-top:10px"></div>
+
+        <div class="models-meta" id="models-meta">
+          <span id="models-meta-cache" data-i18n="md.loading">Loading live catalog…</span>
+        </div>
+
+        <div id="models-alert"></div>
+        <div id="models-content">
+          <div class="pg-loading" style="padding:34px 0"><span class="spinner" aria-hidden="true"></span><span data-i18n="md.fetching">Fetching catalogs from every configured provider…</span></div>
+        </div>
+
+        <div class="card" style="margin-top:34px">
+          <h3 style="margin-top:0" data-i18n="md.useNow">Use any model right now</h3>
+          <p class="small muted" data-i18n="md.useNowBody">Copy a model id and send it with your request — the gateway routes it to the right provider and fails over automatically if that provider errors:</p>
+          <div class="codeblock" data-lang="bash">
+            <div class="codeblock-head"><span>bash</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>curl -X POST <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Explain Go channels briefly",
+    "provider": "openrouter",
+    "model": "z-ai/glm-5.2:free"
+  }'</code></pre>
+          </div>
+          <p class="small muted" data-i18n-html="md.refLinks">Full parameter reference: <a href="/docs/">API Docs</a> · Try it interactively in the <a href="/playground/">Playground</a>.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="/assets/js/app-config.js" defer></script>
+  <script src="/assets/js/i18n-dict.js" defer></script>
+  <script src="/assets/js/i18n.js" defer></script>
+  <script src="/assets/js/layout.js" defer></script>
+  <script src="/assets/js/markdown.js" defer></script>
+  <script src="/assets/js/code.js" defer></script>
+  <script src="/assets/js/models.js" defer></script>
+  <script src="/assets/js/chatbot.js" defer></script>
+</body>
+</html>

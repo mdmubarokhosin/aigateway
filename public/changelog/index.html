@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Changelog — AI Gateway API</title>
+  <meta name="description" content="Every version of the AI Gateway API: deep model-level failover, admin PUSH to GitHub, multi-language UI and the site-wide design unification." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>(function(){try{if(localStorage.getItem('aigw-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body data-page="changelog">
+  <div id="site-header"></div>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="eyebrow" data-i18n="cl.eyebrow">Release history</span>
+        <h1 data-i18n="cl.title">Changelog</h1>
+        <p class="section-sub" data-i18n="cl.subtitle">Every version of the AI Gateway API — what shipped, when, and why it matters.</p>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:48px">
+      <div class="container">
+        <div class="cl-timeline">
+          <div class="cl-item latest">
+            <div class="cl-ver">
+              <span class="cl-badge">v1.4.0</span>
+              <span class="cl-tag" data-i18n="cl.latest">Latest</span>
+              <span class="cl-date">September 2026</span>
+            </div>
+            <h2 style="font-size:1.25rem;margin-bottom:10px" data-i18n="cl.v14.name">Every page, one design</h2>
+            <ul class="cl-list">
+              <li data-i18n="cl.v14.1">All 15 pages now share the home design: aurora hero, floating light particles, gradient title accent and soft pill eyebrows</li>
+              <li data-i18n="cl.v14.2">Env Setup page repaired: proper primary "Generate &amp; download" button, polished key inputs with focus glow</li>
+              <li data-i18n="cl.v14.3">Docs/guide/endpoints headings get gradient ticks; codeblocks lift on hover; table rows highlight</li>
+              <li data-i18n="cl.v14.4">Scroll-reveal extended to code blocks, callouts and tables — with a safety net so content can never stay hidden</li>
+              <li data-i18n="cl.v14.5">prefers-reduced-motion respected; print stylesheet for clean paper output</li>
+            </ul>
+          </div>
+
+          <div class="cl-item">
+            <div class="cl-ver">
+              <span class="cl-badge">v1.3.0</span>
+              <span class="cl-date">September 2026</span>
+            </div>
+            <h2 style="font-size:1.25rem;margin-bottom:10px" data-i18n="cl.v13.name">Design &amp; Experience Upgrade</h2>
+            <ul class="cl-list">
+              <li data-i18n="cl.v13.1">Aurora hero animation, floating light particles and animated gradient text</li>
+              <li data-i18n="cl.v13.2">Live stats band (models, providers, error codes, uptime) with count-up numbers</li>
+              <li data-i18n="cl.v13.3">Scrolling model marquee pulled from the live /models catalog</li>
+              <li data-i18n="cl.v13.4">Rich footer: social icons, live status pill, quick theme/language controls, legal links</li>
+              <li data-i18n="cl.v13.5">Ctrl+K command palette, back-to-top button and reading progress bar</li>
+              <li data-i18n="cl.v13.6">Testimonials + FAQ sections, scroll-reveal animations on every card</li>
+              <li data-i18n="cl.v13.7">New pages: Changelog, Privacy, Terms · beautified 404 · PWA manifest</li>
+            </ul>
+          </div>
+
+          <div class="cl-item">
+            <div class="cl-ver">
+              <span class="cl-badge">v1.2.0</span>
+              <span class="cl-date">September 2026</span>
+            </div>
+            <h2 style="font-size:1.25rem;margin-bottom:10px" data-i18n="cl.v12.name">Deep Failover + Admin PUSH</h2>
+            <ul class="cl-list">
+              <li data-i18n="cl.v12.1">Deep model-level failover: a failing model makes the gateway try EVERY other model of that provider, then the next provider and all of its models — cycling until a reply</li>
+              <li data-i18n="cl.v12.2">Admin panel 🚀 PUSH button commits site/providers/knowledge config straight to GitHub from the browser</li>
+              <li data-i18n="cl.v12.3">wrangler.toml removed — dashboard Variables &amp; Secrets import works again</li>
+              <li data-i18n="cl.v12.4">Final cloudflare-env-import.env: import once, never hand-edit again</li>
+            </ul>
+          </div>
+
+          <div class="cl-item">
+            <div class="cl-ver">
+              <span class="cl-badge">v1.1.0</span>
+              <span class="cl-date">September 2026</span>
+            </div>
+            <h2 style="font-size:1.25rem;margin-bottom:10px" data-i18n="cl.v11.name">Multi-language + Admin CRUD</h2>
+            <ul class="cl-list">
+              <li data-i18n="cl.v11.1">Full Bangla/English interface with Noto Serif Bengali typography everywhere</li>
+              <li data-i18n="cl.v11.2">Admin panel: full CRUD over providers, models, site config and knowledge base</li>
+              <li data-i18n="cl.v11.3">GET-style chat /api/v1/chat?prompt=… + /ask shortcut routes</li>
+              <li data-i18n="cl.v11.4">Telegram bot webhook + on-site chatbot with markdown rendering</li>
+            </ul>
+          </div>
+
+          <div class="cl-item">
+            <div class="cl-ver">
+              <span class="cl-badge">v1.0.0</span>
+              <span class="cl-date">September 2026</span>
+            </div>
+            <h2 style="font-size:1.25rem;margin-bottom:10px" data-i18n="cl.v10.name">First Public Release</h2>
+            <ul class="cl-list">
+              <li data-i18n="cl.v10.1">Express-style middleware API on Cloudflare Pages Functions (Hono runtime)</li>
+              <li data-i18n="cl.v10.2">OpenRouter, OpenCode Zen, Poolside AI + zero-code custom providers</li>
+              <li data-i18n="cl.v10.3">Automatic provider failover, typed error codes, per-IP rate limits</li>
+              <li data-i18n="cl.v10.4">Landing page + 12 feature pages: docs, endpoints, models, playground, guide, status and more</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="/assets/js/app-config.js" defer></script>
+  <script src="/assets/js/i18n-dict.js" defer></script>
+  <script src="/assets/js/i18n.js" defer></script>
+  <script src="/assets/js/layout.js" defer></script>
+  <script src="/assets/js/markdown.js" defer></script>
+  <script src="/assets/js/code.js" defer></script>
+  <script src="/assets/js/chatbot.js" defer></script>
+</body>
+</html>

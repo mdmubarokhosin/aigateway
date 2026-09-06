@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "_doc": "Chatbot agent knowledge base (editable from /admin → Knowledge tab). Every entry is injected into the chatbot + Telegram bot system prompt so the assistant can answer questions about THIS site with real facts. Markdown allowed in answers.",
+  "entries": [
+    {
+      "topic": "What is this website / API?",
+      "tags": [
+        "about",
+        "what",
+        "site",
+        "api"
+      ],
+      "answer": "**AI Gateway API** is a production-ready REST gateway for AI providers. Send **one** `POST /api/v1/chat` request and it routes to OpenRouter, OpenCode Zen, Poolside AI or any OpenAI-compatible provider. If a provider errors, the gateway **automatically fails over** to the next one until a response arrives. Provider API keys live only in server env vars — they are never exposed to browsers."
+    },
+    {
+      "topic": "How to call the chat endpoint (POST)",
+      "tags": [
+        "chat",
+        "post",
+        "curl",
+        "call",
+        "example"
+      ],
+      "answer": "```bash\ncurl https://aigatewaybd.pages.dev/api/v1/chat \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"message\": \"Hello!\"}'\n```\nOptional body fields: `provider`, `model`, `system_prompt`, `temperature` (0–2), `max_tokens`, `failover` (false pins one provider). You can also send multi-turn `{\"messages\":[{\"role\":\"user\",\"content\":\"...\"}]}`."
+    },
+    {
+      "topic": "GET shortcut — open the API from a browser link",
+      "tags": [
+        "get",
+        "ask",
+        "shortcut",
+        "link",
+        "browser"
+      ],
+      "answer": "Two GET-style endpoints work directly in the browser — no headers, no body:\n\n1. `GET /api/v1/chat?prompt=...` — full endpoint.\n2. `GET /ask?prompt=...` — short custom shortcut.\n\nExample: [https://aigatewaybd.pages.dev/ask?prompt=Say%20hi%20in%20Bangla](/ask?prompt=Say%20hi%20in%20Bangla) returns JSON instantly. Add `&raw=1` for plain text, `&provider=poolside` to pin a provider."
+    },
+    {
+      "topic": "Automatic failover",
+      "tags": [
+        "failover",
+        "retry",
+        "resilience"
+      ],
+      "answer": "Failover is ON by default and works at the MODEL level: if a model errors (rate limit, timeout, outage, bad response), the gateway tries EVERY other model of the same provider one by one (up to FAILOVER_MODELS_MAX, default 6, newest-failed models skipped for 5 min); if the whole provider fails, it instantly moves to the NEXT provider and walks all of its models too — cycling up to FAILOVER_MAX_ROUNDS rounds (default 3) with a hard cap of FAILOVER_MAX_ATTEMPTS upstream calls (default 12) until a response arrives. The response reports `provider`, `model` and the full attempt log under `failover`. Set `\"failover\": false` to pin a single provider and its primary model."
+    },
+    {
+      "topic": "Models policy — free only?",
+      "tags": [
+        "models",
+        "free",
+        "catalog"
+      ],
+      "answer": "GET `/api/v1/models` auto-fetches every provider's live catalog. **OpenRouter** and **OpenCode Zen** list only their FREE models (`:free` / `-free` ids); other providers list the full catalog. Results are cached (default 6 h); `?refresh=1` forces a re-fetch. The admin can also pin curated models per provider from the Admin Panel."
+    },
+    {
+      "topic": "How to integrate (JS / Python / Telegram)",
+      "tags": [
+        "integrate",
+        "javascript",
+        "python",
+        "telegram",
+        "guide"
+      ],
+      "answer": "- **JavaScript/Python/cURL**: copy ready examples from the Guide page (/guide/).\n- **Telegram bot**: full functional webhook + polling code on the Telegram page (/telegram/).\n- **Any app**: call the GET shortcut `/ask?prompt=...` — pure URL integration."
+    },
+    {
+      "topic": "Deployment & environment variables",
+      "tags": [
+        "deploy",
+        "env",
+        "cloudflare",
+        "setup"
+      ],
+      "answer": "Deployed on **Cloudflare Pages** from GitHub (build: `npm run build`, output: `out`). All configuration lives in environment variables — the complete importable file with step-by-step instructions is on the **Env Setup** page (/env-setup/)."
+    },
+    {
+      "topic": "Admin panel",
+      "tags": [
+        "admin",
+        "panel",
+        "config"
+      ],
+      "answer": "The owner-only Admin Panel (/admin/) signs in with a GitHub token and provides **full CRUD**: add/edit/delete AI Providers and their models, edit the chatbot knowledge base, site branding, announcement banner and chatbot settings. Every save commits to the GitHub repo → Cloudflare Pages redeploys automatically."
+    }
+  ]
+}

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Provider Guide — AI Gateway API</title>
+  <meta name="description" content="Where and how to add custom AI providers to the gateway: zero-code env vars, dedicated provider files, and the full provider contract — explained in English and Bengali." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>(function(){try{if(localStorage.getItem('aigw-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body data-page="custom-provider">
+  <div id="site-header"></div>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="eyebrow" data-i18n="cp.eyebrow">Extend the gateway</span>
+        <h1 data-i18n="cp.title">Custom Provider Guide</h1>
+        <p class="section-sub">
+          Where the provider system lives, and exactly how to plug in any new AI provider —
+          zero-code or with a tiny file. <strong data-i18n="cp.bnNote">প্রতিটি ধাপের সাথে বাংলায় বিস্তারিত ব্যাখ্যা দেওয়া আছে।</strong>
+          New: you can also manage providers visually with full CRUD in the <a href="/admin/">Admin Panel</a>.
+        </p>
+      </div>
+    </section>
+
+    <div class="container docs-layout">
+      <aside class="docs-sidebar" aria-label="Table of contents">
+        <div class="docs-nav-h">On this page</div>
+        <ul class="docs-nav" id="docs-nav">
+          <li><a href="#concept" class="active">1. How providers work</a></li>
+          <li><a href="#three-ways">2. Three ways to add one</a></li>
+          <li><a href="#method-1">3. Method 1 — Zero code</a></li>
+          <li><a href="#method-2">4. Method 2 — Provider file</a></li>
+          <li><a href="#method-3">5. Method 3 — Template</a></li>
+          <li><a href="#contract">6. Provider contract</a></li>
+          <li><a href="#cloudflare-env">7. Keys on Cloudflare</a></li>
+          <li><a href="#verify">8. Verify it works</a></li>
+          <li><a href="#faq">9. FAQ &amp; troubleshooting</a></li>
+        </ul>
+      </aside>
+
+      <div class="docs-content">
+        <!-- 1 CONCEPT -->
+        <section class="doc-section" id="concept">
+          <h2>1. How providers work</h2>
+          <p>
+            A <strong>provider</strong> is any upstream AI service the gateway can chat with. Every provider lives in
+            <code class="code-inline">src/providers/</code> and exposes the same tiny contract, so the rest of the
+            gateway (validation, errors, rate limits, response shape) works identically no matter who answers.
+          </p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>request flow</span></div>
+            <pre><code>your app ──▶ POST /api/v1/chat { "provider": "poolside", ... }
+                    │
+                    ▼
+            AI Gateway (src/index.js)
+                    │  validate → rate-limit → pick provider (src/providers/registry.js)
+                    ▼
+   ┌─────────────────┼──────────────────┐
+   ▼                 ▼                  ▼
+openrouter.js    poolside.js        custom.js
+OpenRouter API   Poolside API       ANY OpenAI-compatible URL (env-driven)</code></pre>
+          </div>
+          <div class="bn">
+            <span class="bn-tag">বাংলা ব্যাখ্যা</span>
+            <p>Provider মানে হলো AI সেবা দেওয়া কোম্পানি (OpenRouter, Poolside, OpenAI ইত্যাদি)। এদের সবাইকে গেটওয়েতে যুক্ত করার জায়গা হলো <code>src/providers/</code> ফোল্ডার। রেজিস্ট্রি ফাইল (<code>src/providers/registry.js</code>) ঠিক করে কোন কোন provider চালু আছে। আপনি চাইলে কোড না লিখেই (Method 1) অথবা ছোট একটি ফাইল বানিয়ে (Method 2) নতুন provider যোগ করতে পারবেন।</p>
+          </div>
+        </section>
+
+        <!-- 2 THREE WAYS -->
+        <section class="doc-section" id="three-ways">
+          <h2>2. Three ways to add a provider</h2>
+          <div class="grid-3">
+            <div class="card card-hover">
+              <span class="icon-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg></span>
+              <h3 style="font-size:1.02rem">1 — Zero code</h3>
+              <p class="small muted">Reuse the built-in <code class="code-inline">custom</code> provider: just set 3 env vars. Best for quick tests and one extra vendor.</p>
+              <a class="small" href="#method-1">Jump to Method 1 →</a>
+            </div>
+            <div class="card card-hover">
+              <span class="icon-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg></span>
+              <h3 style="font-size:1.02rem">2 — Provider file</h3>
+              <p class="small muted">Add a ~15-line file like <code class="code-inline">poolside.js</code>. First-class id, models list, own env keys. Best for permanence.</p>
+              <a class="small" href="#method-2">Jump to Method 2 →</a>
+            </div>
+            <div class="card card-hover">
+              <span class="icon-tile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V9m6 8V9"/></svg></span>
+              <h3 style="font-size:1.02rem">3 — Template</h3>
+              <p class="small muted">Copy <code class="code-inline">src/providers/_template.js</code> for a fully annotated skeleton when the provider needs custom logic.</p>
+              <a class="small" href="#method-3">Jump to Method 3 →</a>
+            </div>
+          </div>
+          <div class="alert alert-info" style="margin-top:22px">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+            <span><strong>Which one?</strong> Provider speaks OpenAI protocol and you just want it working → Method 1. You want it permanently, with its own id and model list → Method 2. Custom request/response shape → Method 3.</span>
+          </div>
+        </section>
+
+        <!-- 3 METHOD 1 -->
+        <section class="doc-section" id="method-1">
+          <h2>3. Method 1 — Zero code (the <span class="mono">custom</span> provider)</h2>
+          <p>
+            The gateway ships with a universal adapter, <code class="code-inline">src/providers/custom.js</code>. It reads
+            its target from environment variables, so pointing it at a new vendor requires <strong>no code and no
+            redeploy of code</strong> — only env vars:
+          </p>
+          <div class="table-wrap"><table class="data">
+            <thead><tr><th>Env var</th><th>Required</th><th>Example</th></tr></thead>
+            <tbody>
+              <tr><td><code class="code-inline">CUSTOM_BASE_URL</code></td><td>yes</td><td><code class="code-inline">https://api.openai.com/v1</code></td></tr>
+              <tr><td><code class="code-inline">CUSTOM_API_KEY</code></td><td>usually</td><td><code class="code-inline">sk-…</code> (omit for Ollama/LM Studio)</td></tr>
+              <tr><td><code class="code-inline">CUSTOM_MODEL</code></td><td>yes</td><td><code class="code-inline">gpt-4o-mini</code></td></tr>
+            </tbody>
+          </table></div>
+          <p>Then call it with <code class="code-inline">"provider": "custom"</code>:</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>bash</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>curl -X POST <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "provider": "custom",
+    "message": "Hello from my own provider!"
+  }'</code></pre>
+          </div>
+          <h3>Known-good base URLs</h3>
+          <div class="table-wrap"><table class="data">
+            <thead><tr><th>Vendor</th><th>CUSTOM_BASE_URL</th><th>CUSTOM_MODEL example</th></tr></thead>
+            <tbody>
+              <tr><td>OpenAI</td><td><code class="code-inline">https://api.openai.com/v1</code></td><td><code class="code-inline">gpt-4o-mini</code></td></tr>
+              <tr><td>DeepSeek</td><td><code class="code-inline">https://api.deepseek.com</code></td><td><code class="code-inline">deepseek-chat</code></td></tr>
+              <tr><td>Together</td><td><code class="code-inline">https://api.together.xyz/v1</code></td><td><code class="code-inline">meta-llama/Llama-3.3-70B-Instruct-Turbo</code></td></tr>
+              <tr><td>Ollama (local)</td><td><code class="code-inline">http://localhost:11434/v1</code></td><td><code class="code-inline">llama3.2</code> (no key)</td></tr>
+              <tr><td>LM Studio (local)</td><td><code class="code-inline">http://localhost:1234/v1</code></td><td>loaded model (no key)</td></tr>
+            </tbody>
+          </table></div>
+          <div class="bn">
+            <span class="bn-tag">বাংলা ব্যাখ্যা</span>
+            <p><strong>Method 1 কখন ব্যবহার করবেন:</strong> যখন provider-টি OpenAI-এর মতো একই রকম API ব্যবহার করে (বেশিরভাগই করে) এবং আপনি দ্রুত টেস্ট করতে চান। শুধু ৩টি environment variable সেট করুন — <code>CUSTOM_BASE_URL</code> (provider-এর ঠিকানা), <code>CUSTOM_API_KEY</code> (তাদের দেওয়া key), <code>CUSTOM_MODEL</code> (মডেলের নাম)। এরপর রিকোয়েস্টে <code>"provider": "custom"</code> লিখলেই সেই provider উত্তর দেবে। খেয়াল রাখবেন — এই পদ্ধতিতে একসাথে <strong>একটি</strong> custom provider চলে; একাধিক দরকার হলে Method 2 ব্যবহার করুন।</p>
+          </div>
+        </section>
+
+        <!-- 4 METHOD 2 -->
+        <section class="doc-section" id="method-2">
+          <h2>4. Method 2 — Add a dedicated provider file (recommended)</h2>
+          <p>
+            This is exactly how <strong>Poolside AI was added to this project</strong>. A provider that speaks the OpenAI
+            protocol needs one tiny file using the factory, then a 2-line registration.
+          </p>
+
+          <h3>Step 1 — create <code class="code-inline">src/providers/poolside.js</code></h3>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>src/providers/poolside.js — real file from this project</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>import { createOpenAICompatible } from './openai-compatible.js';
+
+export const poolsideProvider = createOpenAICompatible({
+  id: 'poolside',                                   // unique, lowercase
+  label: 'Poolside AI',                             // shown in /providers
+  description: 'Poolside Laguna code-intelligence models…',
+  defaultBaseUrl: 'https://inference.poolside.ai/v1',
+  envKey: 'POOLSIDE_API_KEY',                       // env var holding the key
+  modelEnvKey: 'POOLSIDE_MODEL',                    // optional model override
+  defaultModel: 'poolside/laguna-s-2.1',
+  models: ['poolside/laguna-s-2.1'],
+  supportsMaxTokens: true,
+});</code></pre>
+          </div>
+          <div class="bn">
+            <span class="bn-tag">বাংলা — ধাপ ১</span>
+            <p><code>src/providers/</code> ফোল্ডারে নতুন ফাইল বানান, যেমন <code>poolside.js</code>। ফাইলে উপরের মতো <code>createOpenAICompatible</code> ফ্যাক্টরি কল করুন এবং আপনার provider-এর তথ্য বসান: <code>id</code> (ছোট হাতের অক্ষরে ইউনিক নাম — রিকোয়েস্টে এটাই ব্যবহার হবে), <code>defaultBaseUrl</code> (provider-এর API ঠিকানা, শেষে <code>/v1</code> থাকে সাধারণত), <code>envKey</code> (যে environment variable-এ API key থাকবে), আর <code>defaultModel</code> (মডেলের নাম)। এটাই মূলত পুরো কাজ!</p>
+          </div>
+
+          <h3>Step 2 — register it in <code class="code-inline">src/providers/registry.js</code></h3>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>src/providers/registry.js — only 2 changed lines</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>import { openrouterProvider } from './openrouter.js';
+import { poolsideProvider } from './poolside.js';    // ← 1. import
+import { customProvider } from './custom.js';
+
+const BUILT_IN_PROVIDERS = [
+  openrouterProvider,
+  poolsideProvider,                                  // ← 2. add to the list
+  customProvider,
+];</code></pre>
+          </div>
+          <div class="bn">
+            <span class="bn-tag">বাংলা — ধাপ ২</span>
+            <p><code>registry.js</code> ফাইলে গিয়ে আপনার ফাইলটি import করুন (লাইন ১) এবং <code>BUILT_IN_PROVIDERS</code> তালিকায় যোগ করুন (লাইন ২)। এই তালিকার ক্রম অনুযায়ই <code>GET /api/v1/providers</code>-এ provider দেখা যাবে।</p>
+          </div>
+
+          <h3>Step 3 — set the API key as an env var</h3>
+          <p>Locally: add <code class="code-inline">POOLSIDE_API_KEY=your-key</code> to <code class="code-inline">.env</code> (Node) or <code class="code-inline">.dev.vars</code> (wrangler). On Cloudflare: see <a href="#cloudflare-env">section 7</a>. Never hard-code the key in the file itself.</p>
+
+          <h3>Step 4 — restart / redeploy</h3>
+          <p>Local: stop (<code class="code-inline">Ctrl+C</code>) and re-run <code class="code-inline">npm start</code>. Cloudflare: push to GitHub and Pages redeploys automatically.</p>
+
+          <h3>Step 5 — call it</h3>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>bash</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>curl <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/chat \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{ "provider": "poolside",
+        "model": "poolside/laguna-s-2.1",
+        "messages": [{ "role": "user", "content": "What are channels in Go?" }] }'</code></pre>
+          </div>
+          <div class="bn">
+            <span class="bn-tag">বাংলা — ধাপ ৩–৫</span>
+            <p>ধাপ ৩: আপনার provider-এর key-টি environment variable-এ রাখুন (নামটি হবে ফাইলে <code>envKey</code>-তে যা লিখেছেন, যেমন <code>POOLSIDE_API_KEY</code>)। Cloudflare-এ দিলে অবশ্যই রিডিপ্লয় লাগবে। ধাপ ৪: লোকালে সার্ভার রিস্টার্ট করুন, Cloudflare-এ push করলেই হবে। ধাপ ৫: এবার রিকোয়েস্টে <code>"provider": "poolside"</code> (আপনার দেওয়া id) পাঠিয়ে চেক করুন। <code>GET /api/v1/providers</code>-এ নতুন provider "configured" দেখালে বুঝবেন সব ঠিক আছে।</p>
+          </div>
+        </section>
+
+        <!-- 5 METHOD 3 -->
+        <section class="doc-section" id="method-3">
+          <h2>5. Method 3 — the template (full control)</h2>
+          <p>
+            If the provider does <em>not</em> speak the OpenAI protocol (different request shape, different auth, custom
+            response format), copy <code class="code-inline">src/providers/_template.js</code>. It is a fully annotated
+            skeleton of the provider contract — you implement <code class="code-inline">isConfigured(env)</code> and
+            <code class="code-inline">chat(payload, ctx)</code> yourself, throw typed <code class="code-inline">ApiError</code>s,
+            and register the result exactly like Step 2 above.
+          </p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>the essential contract (from _template.js)</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>export const myProvider = {
+  id: 'myprovider',
+  label: 'My Provider',
+  description: '…',
+  defaultModel: 'my-model-v1',
+  models: ['my-model-v1'],
+  requiredEnvKeys: ['MYPROVIDER_API_KEY'],
+
+  isConfigured(env) {
+    return Boolean(env.MYPROVIDER_API_KEY);
+  },
+
+  async chat(payload, { env, config }) {
+    // build YOUR request shape, fetch with utils/http.js postJson(),
+    // map failures with upstreamError() from core/errors.js,
+    // then return { reply, model, usage } — the gateway does the rest.
+  },
+};</code></pre>
+          </div>
+          <div class="bn">
+            <span class="bn-tag">বাংলা ব্যাখ্যা</span>
+            <p>যদি provider-এর API OpenAI-এর মতো না হয় (যেমন Google Gemini-এর পুরনো ফরম্যাট), তাহলে <code>_template.js</code> ফাইলটি কপি করে নিজের মতো লিখুন। দুটি ফাংশন বানাতে হবে — <code>isConfigured()</code> (key আছে কি না) আর <code>chat()</code> (আসল রিকোয়েস্ট)। এরর দিতে হবে <code>core/errors.js</code>-এর <code>ApiError</code> দিয়ে, যাতে সব এরর একই ফরম্যাটে যায়। এরপর registry-তে যোগ করুন — ব্যস।</p>
+          </div>
+        </section>
+        <!-- 6 CONTRACT -->
+        <section class="doc-section" id="contract">
+          <h2>6. Provider contract reference</h2>
+          <p>Every option accepted by <code class="code-inline">createOpenAICompatible()</code> — the factory used by OpenRouter, Poolside and custom:</p>
+          <div class="table-wrap"><table class="data">
+            <thead><tr><th>Field</th><th>Required</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td><code class="code-inline">id</code></td><td>yes</td><td>Unique lowercase id — the value clients pass as <code class="code-inline">"provider"</code>.</td></tr>
+              <tr><td><code class="code-inline">label</code></td><td>yes</td><td>Human name shown in <code class="code-inline">GET /api/v1/providers</code>.</td></tr>
+              <tr><td><code class="code-inline">description</code></td><td>yes</td><td>One-liner for the provider list.</td></tr>
+              <tr><td><code class="code-inline">defaultBaseUrl</code></td><td>yes*</td><td>e.g. <code class="code-inline">https://inference.poolside.ai/v1</code> — <em>or</em> use <code class="code-inline">baseUrlEnvKey</code> to read it from env (how <code class="code-inline">custom.js</code> works).</td></tr>
+              <tr><td><code class="code-inline">envKey</code></td><td>yes</td><td>Name of the env var holding the API key.</td></tr>
+              <tr><td><code class="code-inline">apiKeyOptional</code></td><td>no</td><td><code class="code-inline">true</code> for key-less runtimes (Ollama, LM Studio).</td></tr>
+              <tr><td><code class="code-inline">modelEnvKey</code></td><td>yes</td><td>Env var that overrides <code class="code-inline">defaultModel</code>.</td></tr>
+              <tr><td><code class="code-inline">defaultModel</code></td><td>yes</td><td>Fallback model id.</td></tr>
+              <tr><td><code class="code-inline">models</code></td><td>no</td><td>Informational list (shown in the Playground's model picker).</td></tr>
+              <tr><td><code class="code-inline">extraHeadersFn</code></td><td>no</td><td><code class="code-inline">(env) =&gt; headers</code> for vendor-specific headers (OpenRouter uses it for attribution).</td></tr>
+              <tr><td><code class="code-inline">supportsMaxTokens</code></td><td>no</td><td>Set <code class="code-inline">false</code> if the vendor rejects <code class="code-inline">max_tokens</code>.</td></tr>
+            </tbody>
+          </table></div>
+          <p>The factory handles everything else: auth header, timeout, error mapping (401→<code class="code-inline">UPSTREAM_AUTH_ERROR</code>, 429→<code class="code-inline">UPSTREAM_RATE_LIMIT</code>…), usage normalization and the success envelope.</p>
+        </section>
+
+        <!-- 7 CLOUDFLARE ENV -->
+        <section class="doc-section" id="cloudflare-env">
+          <h2>7. Setting provider keys on Cloudflare Pages</h2>
+          <ol>
+            <li>Open the <strong>Cloudflare dashboard</strong> → <em>Workers &amp; Pages</em> → click your Pages project.</li>
+            <li>Go to <strong>Settings</strong> → <strong>Variables and Secrets</strong>.</li>
+            <li>Fastest: click <strong>Import .env</strong> and upload a prepared env file (all variables at once) — or click <strong>+ Add</strong>, choose type <em>Secret</em>, and enter the name (e.g. <code class="code-inline">POOLSIDE_API_KEY</code>) and the key value.</li>
+            <li>Add it to <strong>both</strong> environments: <em>Production</em> and <em>Preview</em> (tabs at the top of the section).</li>
+            <li><strong>Redeploy</strong> — Deployments → latest deployment → <em>Retry deployment</em>, or just push any commit. New variables only take effect on a fresh deployment.</li>
+          </ol>
+          <div class="alert alert-warn">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></svg>
+            <span><strong>Security:</strong> never commit keys to the repo. If a key ever leaks, rotate it at the vendor and update the env var. Keep <code class="code-inline">.env</code> / <code class="code-inline">.dev.vars</code> git-ignored (already configured).</span>
+          </div>
+          <div class="bn">
+            <span class="bn-tag">বাংলা — ধাপে ধাপে</span>
+            <p>① Cloudflare ড্যাশবোর্ডে ঢুকুন → <em>Workers &amp; Pages</em> → নিজের প্রজেক্টে ক্লিক করুন। ② <em>Settings</em> ট্যাব → <em>Variables and Secrets</em> অংশে যান। ③ <strong>Import .env</strong> বাটন দিয়ে প্রস্তুত করা env ফাইল আপলোড করুন (একবারে সব), অথবা <em>+ Add</em> চাপুন → টাইপ <em>Secret</em> → নাম দিন (যেমন <code>POOLSIDE_API_KEY</code>) এবং key পেস্ট করুন। ④ <strong>Production এবং Preview — দুই জায়গাতেই</strong> যোগ করতে ভুলবেন না। ⑤ নতুন variable কাজ করার জন্য একটি <strong>নতুন deployment</strong> লাগবেই — Deployments থেকে Retry deployment করুন বা ছোট একটি commit push করুন।</p>
+          </div>
+        </section>
+
+        <!-- 8 VERIFY -->
+        <section class="doc-section" id="verify">
+          <h2>8. Verify it works</h2>
+          <p>Two quick checks after deploying:</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>1 — is the provider listed &amp; configured?</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>curl <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/providers
+# → find your provider in the list; "configured": true is required</code></pre>
+          </div>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>2 — does it answer?</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>curl -X POST <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{ "provider": "poolside", "failover": false, "message": "ping" }'</code></pre>
+          </div>
+          <p>Prefer clicking over curl? The <a href="/status/">API Status page</a> has a per-provider <strong>Test</strong> button that runs this check from the browser.</p>
+        </section>
+
+        <!-- 9 FAQ -->
+        <section class="doc-section" id="faq" style="margin-bottom:0">
+          <h2>9. FAQ &amp; troubleshooting</h2>
+          <h3>Can I add more than one custom provider?</h3>
+          <p>Yes — Method 1's <code class="code-inline">custom</code> slot holds one vendor, but Method 2 lets you add unlimited providers (one file each). Many teams keep <code class="code-inline">custom</code> as their staging playground and promote serious vendors to dedicated files.</p>
+          <h3>How do I know if a vendor is OpenAI-compatible?</h3>
+          <p>If this curl returns JSON with <code class="code-inline">choices[0].message.content</code>, it is compatible:</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>compatibility probe</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>curl https://VENDOR-URL/v1/chat/completions \
+  -H "Authorization: Bearer $KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "model": "their-model", "messages": [{ "role": "user", "content": "hi" }] }'</code></pre>
+          </div>
+          <h3>Troubleshooting table</h3>
+          <div class="table-wrap"><table class="data">
+            <thead><tr><th>Symptom</th><th>Code</th><th>Fix</th></tr></thead>
+            <tbody>
+              <tr><td>New provider id gets <code class="code-inline">UNKNOWN_PROVIDER</code></td><td>400</td><td>Not registered — check <code class="code-inline">registry.js</code> and that you redeployed.</td></tr>
+              <tr><td>"not configured on the server"</td><td><code class="code-inline">PROVIDER_NOT_CONFIGURED</code></td><td>Env var missing or named differently than <code class="code-inline">envKey</code>; remember the redeploy rule.</td></tr>
+              <tr><td>"rejected the API key"</td><td><code class="code-inline">UPSTREAM_AUTH_ERROR</code></td><td>Wrong/revoked key in the env var (no quotes, no spaces).</td></tr>
+              <tr><td>"could not find the requested model"</td><td><code class="code-inline">UPSTREAM_ERROR</code></td><td>Model id typo in <code class="code-inline">defaultModel</code> or the request.</td></tr>
+              <tr><td>"Cannot reach …"</td><td><code class="code-inline">NETWORK_ERROR</code></td><td>Wrong <code class="code-inline">defaultBaseUrl</code> (protocol, path, trailing <code class="code-inline">/v1</code>).</td></tr>
+              <tr><td>Times out on big prompts</td><td><code class="code-inline">UPSTREAM_TIMEOUT</code></td><td>Raise <code class="code-inline">PROVIDER_TIMEOUT_MS</code>.</td></tr>
+              <tr><td>Provider ignores temperature</td><td>—</td><td>Some vendors only accept specific ranges; set <code class="code-inline">temperature</code> per request or extend the factory call.</td></tr>
+            </tbody>
+          </table></div>
+          <div class="bn" style="margin-top:24px">
+            <span class="bn-tag">বাংলা — শেষ কথা</span>
+            <p>সংক্ষেপে: নতুন provider যোগ করার সবচেয়ে সহজ পথ হলো Method 2 — <code>src/providers/</code>-এ ছোট একটি ফাইল + <code>registry.js</code>-এ ২ লাইন + Cloudflare-এ key। কোনো সমস্যা হলে প্রথমে <code>GET /api/v1/providers</code> দেখুন (provider তালিকায় আছে? configured?), তারপর উপরের টেবিলের এরর কোডের সাথে মেলান। Status পেজের Test বাটন দিয়েও যাচাই করতে পারেন।</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="/assets/js/app-config.js" defer></script>
+  <script src="/assets/js/i18n-dict.js" defer></script>
+  <script src="/assets/js/i18n.js" defer></script>
+  <script src="/assets/js/layout.js" defer></script>
+  <script src="/assets/js/markdown.js" defer></script>
+  <script src="/assets/js/code.js" defer></script>
+  <script src="/assets/js/chatbot.js" defer></script>
+  <script>
+    (function () {
+      var links = Array.prototype.slice.call(document.querySelectorAll('#docs-nav a'));
+      var sections = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+      if (!('IntersectionObserver' in window) || !sections.length) return;
+      var current = sections[0];
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) { if (entry.isIntersecting) current = entry.target; });
+        links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + current.id); });
+      }, { rootMargin: '-80px 0px -60% 0px' });
+      sections.forEach(function (s) { observer.observe(s); });
+    })();
+  </script>
+</body>
+</html>

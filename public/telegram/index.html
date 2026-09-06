@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telegram Bot | AI Gateway API</title>
+  <meta name="description" content="Run a functional Telegram AI bot on your own gateway: serverless webhook on Cloudflare Pages + a zero-dependency local polling script. Full setup guide with copy-paste code." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="robots" content="index, follow" />
+  <script>(function(){try{if(localStorage.getItem('aigw-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body data-page="telegram">
+  <div id="site-header"></div>
+
+  <main>
+    <section class="hero" style="padding:72px 0 40px">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="container">
+        <span class="eyebrow" data-i18n="tg.eyebrow">Functional code sample — step by step</span>
+        <h1 style="font-size:2.4rem;line-height:1.2"><span data-i18n="tg.title1">Telegram</span> <span class="grad-text" data-i18n="tg.title2">AI Bot</span></h1>
+        <p class="hero-sub" style="max-width:820px" data-i18n-html="tg.subtitle">
+          A complete, working Telegram bot that answers every message through <strong>your own gateway</strong>
+          (same provider chain, same automatic failover as the website chatbot). Two ready options:
+          a <strong>serverless webhook</strong> on Cloudflare Pages (recommended) and a
+          <strong>local polling script</strong> that runs on any computer. No provider keys ever touch Telegram or your local machine.
+        </p>
+        <div class="hero-pills">
+          <span class="pill"><span class="sdot" style="background:var(--ok)"></span><span data-i18n="tg.pill1">Webhook: serverless, free</span></span>
+          <span class="pill"><span class="sdot" style="background:var(--primary)"></span><span data-i18n="tg.pill2">Polling: zero dependency</span></span>
+          <span class="pill"><span class="sdot" style="background:var(--warn)"></span><span data-i18n="tg.pill3">Replies in Bangla &amp; English</span></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container docs-content" style="max-width:940px">
+        <div class="callout" style="margin-bottom:26px">
+          <strong data-i18n="tg.howTitle">How the webhook works</strong>
+          <p class="small" style="margin:6px 0 0" data-i18n-html="tg.howBody">
+            Telegram POSTs every incoming message to <code class="code-inline">/api/telegram/&lt;SECRET&gt;</code> — a Cloudflare Pages Function
+            that asks your own <code class="code-inline">/api/v1/chat</code> core (with failover across all configured providers) and sends the answer back
+            via <code class="code-inline">sendMessage</code>. Long answers are split into Telegram-sized chunks; a per-chat rate limit blocks loops.
+          </p>
+        </div>
+
+        <h2 id="setup-webhook">1. <span data-i18n="tg.s1">Create the bot (2 minutes)</span></h2>
+        <ol>
+          <li data-i18n-html="tg.s1a">Open Telegram and message <strong>@BotFather</strong>.</li>
+          <li data-i18n-html="tg.s1b">Send <code class="code-inline">/newbot</code>, choose a display name and a username (must end in <em>bot</em>).</li>
+          <li data-i18n-html="tg.s1c">BotFather replies with a token like <code class="code-inline">7216334:AAH8k…</code> — that is your <code class="code-inline">TELEGRAM_BOT_TOKEN</code>.</li>
+        </ol>
+
+        <h2 id="setup-env">2. <span data-i18n="tg.s2">Add the env vars to Cloudflare Pages</span></h2>
+        <p data-i18n-html="tg.s2body">Dashboard → <strong>Workers &amp; Pages → aigateway → Settings → Variables and Secrets</strong> (add to <em>Production</em> and <em>Preview</em>):</p>
+        <div class="codeblock" data-lang="env">
+          <div class="codeblock-head"><span>env</span><button class="copy-btn" type="button" data-i18n="common.copy">Copy</button></div>
+          <pre><code>TELEGRAM_BOT_TOKEN=7216334:AAH8k-your-real-token-from-botfather
+TELEGRAM_WEBHOOK_SECRET=pick-any-long-random-string-here
+# optional:
+TELEGRAM_BOT_USERNAME=mygatewaybot
+TELEGRAM_MAX_TOKENS=1200</code></pre>
+        </div>
+        <p class="small muted" data-i18n-html="tg.s2note">The complete importable file lives on the <a href="/env-setup/">Env Setup</a> page — Telegram vars are already included there.</p>
+
+        <h2 id="setup-webhook-url">3. <span data-i18n="tg.s3">Register the webhook (one command)</span></h2>
+        <p data-i18n="tg.s3body">Replace the two placeholders and run once — the bot goes live immediately:</p>
+        <div class="codeblock" data-lang="bash">
+          <div class="codeblock-head"><span>bash</span><button class="copy-btn" type="button" data-i18n="common.copy">Copy</button></div>
+          <pre><code>curl "https://api.telegram.org/bot&lt;TELEGRAM_BOT_TOKEN&gt;/setWebhook" \
+  --data-urlencode "url=https://aigatewaybd.pages.dev/api/telegram/&lt;TELEGRAM_WEBHOOK_SECRET&gt;" \
+  --data-urlencode "allowed_updates=[&quot;message&quot;]"</code></pre>
+        </div>
+        <p class="small muted" data-i18n-html="tg.s3note">Check it any time: open <a href="/api/telegram" target="_blank" rel="noopener">/api/telegram</a> (status JSON) or run <code class="code-inline">getWebhookInfo</code> the same way.</p>
+
+        <h2 id="test">4. <span data-i18n="tg.s4">Test it</span></h2>
+        <p data-i18n-html="tg.s4body">Open your bot in Telegram, press <strong>Start</strong>, then send anything — Bangla or English:</p>
+        <div class="terminal" role="img" aria-label="Telegram conversation example">
+          <div class="terminal-head">
+            <span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>
+            <span class="terminal-title" data-i18n="tg.demoTitle">Telegram — your bot</span>
+          </div>
+          <div class="terminal-body">
+            <span class="tk-c">you →</span> বাংলায় একটি ছড়া লেখো<br />
+            <span class="tk-c">bot →</span> আকাশে তারা জ্বলে রাতে,<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;নদীর জলে ছায়া ভাসে হাতে…<br />
+            <span class="tk-c">you →</span> Explain CORS in one paragraph<br />
+            <span class="tk-c">bot →</span> CORS lets a browser trust another origin…
+          </div>
+        </div>
+
+        <h2 id="polling">5. <span data-i18n="tg.s5">Alternative: local polling bot (no Cloudflare)</span></h2>
+        <p data-i18n-html="tg.s5body">The repo ships a zero-dependency Node script at <code class="code-inline">examples/telegram-bot-poller.mjs</code> — it long-polls Telegram and answers via your gateway's public <code class="code-inline">/ask</code> endpoint. Run it on any machine with Node 18+:</p>
+        <div class="codeblock" data-lang="bash">
+          <div class="codeblock-head"><span>bash</span><button class="copy-btn" type="button" data-i18n="common.copy">Copy</button></div>
+          <pre><code>export TELEGRAM_BOT_TOKEN="7216334:AAH8k-your-token"
+export GATEWAY_BASE="https://aigatewaybd.pages.dev"
+node examples/telegram-bot-poller.mjs</code></pre>
+        </div>
+
+        <h2 id="env-vars">6. <span data-i18n="tg.s6">All Telegram env vars</span></h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr><th>Variable</th><th data-i18n="tg.thRequired">Required</th><th data-i18n="tg.thPurpose">Purpose</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>TELEGRAM_BOT_TOKEN</code></td><td><span data-i18n="tg.yes">Yes</span></td><td data-i18n="tg.v1">Bot token from @BotFather.</td></tr>
+              <tr><td><code>TELEGRAM_WEBHOOK_SECRET</code></td><td><span data-i18n="tg.recommended">Recommended</span></td><td data-i18n="tg.v2">Secret path segment — updates to other paths get 403.</td></tr>
+              <tr><td><code>TELEGRAM_BOT_USERNAME</code></td><td>—</td><td data-i18n="tg.v3">Shown in the /start welcome text.</td></tr>
+              <tr><td><code>TELEGRAM_MAX_TOKENS</code></td><td>—</td><td data-i18n="tg.v4">Reply length cap (default 1200).</td></tr>
+              <tr><td><code>TELEGRAM_SYSTEM_PROMPT</code></td><td>—</td><td data-i18n="tg.v5">Override the bot's whole personality/system prompt.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout" style="margin-top:24px">
+          <strong data-i18n="tg.troubleTitle">Troubleshooting</strong>
+          <ul class="small" style="margin:8px 0 0;padding-left:20px">
+            <li data-i18n-html="tg.t1">No reply at all → run <code class="code-inline">getWebhookInfo</code>; if <em>last_error_message</em> mentions 403, the secret path in the webhook URL doesn't match the env var.</li>
+            <li data-i18n="tg.t2">"TELEGRAM_BOT_TOKEN is not configured" → add the variable in Cloudflare and redeploy.</li>
+            <li data-i18n-html="tg.t3">Error replies from the bot → the providers themselves are failing; check <a href="/status/">API Status</a>. The bot message shows the exact error code.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="/assets/js/app-config.js" defer></script>
+  <script src="/assets/js/i18n-dict.js" defer></script>
+  <script src="/assets/js/i18n.js" defer></script>
+  <script src="/assets/js/layout.js" defer></script>
+  <script src="/assets/js/markdown.js" defer></script>
+  <script src="/assets/js/code.js" defer></script>
+  <script src="/assets/js/chatbot.js" defer></script>
+</body>
+</html>

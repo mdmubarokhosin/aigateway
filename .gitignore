@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output
+out/
+
+# Wrangler local state
+.wrangler/
+
+# Secrets — NEVER commit these
+.env
+.dev.vars
+.env.local
+.dev.vars.local
+
+# Owner-only real env import file (contains live keys — NEVER commit/push)
+cloudflare-env-import.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS artifacts
+.DS_Store
+Thumbs.db

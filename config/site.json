@@ -1,0 +1,25 @@
+{
+  "appName": "AI Gateway API",
+  "tagline": "One AI API. Every provider.",
+  "description": "A production-ready REST gateway: send one POST /api/v1/chat request and route it to OpenRouter, OpenCode Zen, Poolside AI, or any OpenAI-compatible provider — with automatic failover, typed errors and zero key exposure.",
+  "announcement": {
+    "enabled": false,
+    "text": "",
+    "link": "",
+    "linkLabel": "Learn more"
+  },
+  "chatbot": {
+    "enabled": true,
+    "name": "Gateway Assistant",
+    "welcome": "Hi! I'm the AI Gateway assistant. Ask me anything about this API — endpoints, providers, models, failover, integration... I run on this very gateway, so if I reply, the API is working. (Reply language: Bangla or English — your choice!)",
+    "quickQuestions": [
+      "How do I call the chat endpoint?",
+      "Which providers and models are available?",
+      "How does automatic failover work?",
+      "How do I integrate the API in JavaScript?",
+      "How do I add my own custom provider?"
+    ],
+    "temperature": 0.3,
+    "maxTokens": 900
+  }
+}

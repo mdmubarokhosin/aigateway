@@ -1,0 +1,17 @@
+{
+  "name": "AI Gateway API",
+  "short_name": "AI Gateway",
+  "description": "Production-ready multi-provider AI gateway REST API with deep model-level automatic provider failover on Cloudflare Pages.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fafafa",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

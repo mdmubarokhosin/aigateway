@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Usage &amp; Integration Guide — AI Gateway API</title>
+  <meta name="description" content="Integrate the AI Gateway in minutes: cURL, JavaScript, Python examples, multi-turn conversations, retry logic and Cloudflare Pages deployment." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>(function(){try{if(localStorage.getItem('aigw-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body data-page="guide">
+  <div id="site-header"></div>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="eyebrow" data-i18n="guide.eyebrow">Cookbook</span>
+        <h1 data-i18n="guide.title">Usage &amp; Integration Guide</h1>
+        <p class="section-sub" data-i18n-html="guide.subtitle">From first request to production deployment — copy-paste recipes for every common integration. Plus: <a href="/telegram/">Telegram bot</a> and the browser-clickable <a href="/docs/#getchat">GET /ask endpoint</a>.</p>
+      </div>
+    </section>
+
+    <div class="container docs-layout">
+      <aside class="docs-sidebar" aria-label="Table of contents">
+        <div class="docs-nav-h">On this page</div>
+        <ul class="docs-nav" id="docs-nav">
+          <li><a href="#setup" class="active">1. Setup</a></li>
+          <li><a href="#first-request">2. First request</a></li>
+          <li><a href="#javascript">3. JavaScript / Node</a></li>
+          <li><a href="#python">4. Python</a></li>
+          <li><a href="#multiturn">5. Multi-turn chats</a></li>
+          <li><a href="#retries">6. Errors &amp; retries</a></li>
+          <li><a href="#deploy">7. Deploy to Cloudflare</a></li>
+          <li><a href="#local">8. Local development</a></li>
+          <li><a href="#troubleshooting">9. Troubleshooting</a></li>
+        </ul>
+      </aside>
+
+      <div class="docs-content">
+        <!-- 1 SETUP -->
+        <section class="doc-section" id="setup">
+          <h2>1. Setup</h2>
+          <p>
+            You need a running gateway (deployed or local) and at least one provider key configured on it.
+            Keys are <strong>server-side environment variables</strong> — never shipped to clients.
+          </p>
+          <ol>
+            <li>Copy the examples: <code class="code-inline">cp .env.example .env</code> (Node) or <code class="code-inline">cp .dev.vars.example .dev.vars</code> (wrangler).</li>
+            <li>Fill in one of: <code class="code-inline">OPENROUTER_API_KEY</code>, <code class="code-inline">POOLSIDE_API_KEY</code>, or the <code class="code-inline">CUSTOM_*</code> trio.</li>
+            <li>Start the gateway: <code class="code-inline">npm start</code> → <code class="code-inline">http://localhost:5000</code>.</li>
+          </ol>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>.env (local example)</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxx
+POOLSIDE_API_KEY=psk-xxxxxxxxxxxxxxxxxxxxxxxx
+# Optional:
+DEFAULT_PROVIDER=openrouter
+# CUSTOM_BASE_URL=https://api.openai.com/v1
+# CUSTOM_API_KEY=sk-xxxx
+# CUSTOM_MODEL=gpt-4o-mini</code></pre>
+          </div>
+          <div class="bn">
+            <span class="bn-tag">বাংলা ব্যাখ্যা</span>
+            <p>Key-গুলো কোনো ফাইলে হার্ডকোড করবেন না। লোকালে <code>.env</code> ফাইলে (যা .gitignore-এ আছে), আর Cloudflare-এ ড্যাশবোর্ডের Environment variables-এ রাখুন। যে key-ই আগে সেট করবেন, সেই provider সাথে সাথে চালু হয়ে যাবে — <code>GET /api/v1/providers</code> কল করে নিশ্চিত হতে পারবেন।</p>
+          </div>
+        </section>
+
+        <!-- 2 FIRST REQUEST -->
+        <section class="doc-section" id="first-request">
+          <h2>2. First request</h2>
+          <p>The smallest possible integration — one POST with JSON:</p>
+          <div data-tabs>
+            <div class="tab-list" role="tablist" aria-label="First request examples">
+              <button class="tab is-active" data-tab="curl" role="tab" aria-selected="true">cURL</button>
+              <button class="tab" data-tab="js" role="tab" aria-selected="false">JavaScript</button>
+              <button class="tab" data-tab="py" role="tab" aria-selected="false">Python</button>
+            </div>
+            <div class="tab-panel is-active" data-panel="curl">
+              <div class="codeblock">
+                <div class="codeblock-head"><span>bash</span><button class="copy-btn" type="button">Copy</button></div>
+                <pre><code>curl -X POST <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "provider": "openrouter",
+    "message": "What is the meaning of life?",
+    "temperature": 0.7
+  }'</code></pre>
+              </div>
+            </div>
+            <div class="tab-panel" data-panel="js">
+              <div class="codeblock">
+                <div class="codeblock-head"><span>javascript</span><button class="copy-btn" type="button">Copy</button></div>
+                <pre><code>const res = await fetch(<span class="live-base">"https://YOUR-DOMAIN"</span> + "/api/v1/chat", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    provider: "openrouter",
+    message: "What is the meaning of life?",
+  }),
+});
+const data = await res.json();
+console.log(data.reply);</code></pre>
+              </div>
+            </div>
+            <div class="tab-panel" data-panel="py">
+              <div class="codeblock">
+                <div class="codeblock-head"><span>python</span><button class="copy-btn" type="button">Copy</button></div>
+                <pre><code>import requests
+
+data = requests.post(
+    "<span class="live-base">https://YOUR-DOMAIN</span>/api/v1/chat",
+    json={"message": "What is the meaning of life?"},
+    timeout=60,
+).json()
+print(data["reply"], "— served by", data["provider"])</code></pre>
+              </div>
+            </div>
+          </div>
+          <p>Swap <code class="code-inline">"provider"</code> to <code class="code-inline">"poolside"</code> for code-focused questions — same body, same response shape.</p>
+        </section>
+
+        <!-- 3 JAVASCRIPT -->
+        <section class="doc-section" id="javascript">
+          <h2>3. JavaScript / Node</h2>
+          <h3>Reusable client function</h3>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>chat.js — works in browsers and Node 18+</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>const GATEWAY = "<span class="live-base">https://YOUR-DOMAIN</span>";   // auto-detected on this page
+const API_KEY  = "";                             // only if API_SECRET_KEY is set
+
+export async function chat({ provider, message, systemPrompt, model, temperature, maxTokens }) {
+  const body = { provider, message };
+  if (systemPrompt) body.system_prompt = systemPrompt;
+  if (model) body.model = model;
+  if (temperature !== undefined) body.temperature = temperature;
+  if (maxTokens) body.max_tokens = maxTokens;
+
+  const res = await fetch(`${GATEWAY}/api/v1/chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(API_KEY ? { "X-API-Key": API_KEY } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await res.json();
+  if (!data.success) {
+    const err = new Error(data.error?.message || "Gateway error");
+    err.code = data.error?.code;
+    err.retryAfter = data.error?.details?.retryAfterSeconds;
+    throw err;
+  }
+  return data; // { reply, provider, model, usage }
+}</code></pre>
+          </div>
+          <h3>Usage</h3>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>example.mjs</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>import { chat } from "./chat.js";
+
+const answer = await chat({
+  provider: "poolside",
+  message: "Write a Go function that sums a slice of ints",
+  systemPrompt: "You are a senior Go developer. Answer with code first.",
+  maxTokens: 400,
+});
+console.log(answer.reply);</code></pre>
+          </div>
+        </section>
+
+        <!-- 4 PYTHON -->
+        <section class="doc-section" id="python">
+          <h2>4. Python</h2>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>gateway.py</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>import os
+import requests
+
+GATEWAY = "<span class="live-base">https://YOUR-DOMAIN</span>"
+API_KEY = os.getenv("GATEWAY_API_KEY", "")  # only if API_SECRET_KEY is set
+
+
+def chat(message, provider="openrouter", system_prompt=None, **kwargs):
+    payload = {"provider": provider, "message": message, **kwargs}
+    if system_prompt:
+        payload["system_prompt"] = system_prompt
+
+    res = requests.post(
+        f"{GATEWAY}/api/v1/chat",
+        json=payload,
+        headers={"X-API-Key": API_KEY} if API_KEY else {},
+        timeout=60,
+    )
+    res.raise_for_status()
+    data = res.json()
+    if not data["success"]:
+        raise RuntimeError(f"{data['error']['code']}: {data['error']['message']}")
+    return data["reply"]
+
+
+if __name__ == "__main__":
+    print(chat("What are channels in Go?", provider="poolside"))</code></pre>
+          </div>
+        </section>
+
+        <!-- 5 MULTITURN -->
+        <section class="doc-section" id="multiturn">
+          <h2>5. Multi-turn conversations</h2>
+          <p>
+            The gateway is <strong>stateless</strong> — you own the conversation. Keep the turns in your app and send
+            the full <code class="code-inline">messages[]</code> array each time:
+          </p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>conversation loop (JavaScript)</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>const turns = [
+  { role: "system", content: "You are a helpful assistant." },
+];
+
+async function talk(userText) {
+  turns.push({ role: "user", content: userText });
+
+  const res = await fetch(`${GATEWAY}/api/v1/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ provider: "openrouter", messages: turns }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.code);
+
+  turns.push({ role: "assistant", content: data.reply });
+  return data.reply;
+}
+
+await talk("Hi! What is HTTP 429?");     // -> explanation
+await talk("Show me a retry example.");  // model remembers the context</code></pre>
+          </div>
+          <div class="alert alert-info">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+            <span>Trim old turns when the conversation grows — <code class="code-inline">MAX_MESSAGES</code> defaults to 50 and <code class="code-inline">MAX_MESSAGE_LENGTH</code> to 8000 chars.</span>
+          </div>
+        </section>
+
+        <!-- 6 RETRIES -->
+        <section class="doc-section" id="retries">
+          <h2>6. Errors, retries &amp; auto-failover</h2>
+          <p>
+            <strong>Heads-up: the gateway already retries for you.</strong> Auto-failover is enabled by default — when a
+            provider errors (rate limit, timeout, outage…), the gateway transparently retries the next configured
+            provider until a response arrives, and the response tells you who answered via the
+            <code class="code-inline">provider</code> field and the <code class="code-inline">failover.attempts</code> list.
+            Most client-side retry loops are therefore unnecessary; add one only as a final safety net for
+            <code class="code-inline">ALL_PROVIDERS_FAILED</code> or network-level failures.
+          </p>
+          <p>Retry <strong>only</strong> on transient codes: <code class="code-inline">ALL_PROVIDERS_FAILED</code>, <code class="code-inline">UPSTREAM_RATE_LIMIT</code>, <code class="code-inline">UPSTREAM_UNAVAILABLE</code>, <code class="code-inline">UPSTREAM_TIMEOUT</code>, <code class="code-inline">UPSTREAM_ERROR</code>. Never retry validation (400) or auth (401) errors.</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>smart retry with backoff (JavaScript)</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>const RETRYABLE = new Set([
+  "UPSTREAM_RATE_LIMIT", "UPSTREAM_UNAVAILABLE",
+  "UPSTREAM_TIMEOUT", "UPSTREAM_ERROR",
+]);
+
+export async function chatWithRetry(body, attempts = 3) {
+  for (let i = 0; i &lt; attempts; i++) {
+    const res = await fetch(`${GATEWAY}/api/v1/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+
+    if (data.success) return data.reply;
+
+    const code = data.error?.code;
+    if (!RETRYABLE.has(code) || i === attempts - 1) {
+      throw new Error(`${code}: ${data.error?.message}`);
+    }
+
+    const wait = (data.error?.details?.retryAfterSeconds ?? 2 ** i) * 1000;
+    await new Promise((r) =&gt; setTimeout(r, wait));
+  }
+}</code></pre>
+          </div>
+          <div class="bn">
+            <span class="bn-tag">বাংলা ব্যাখ্যা</span>
+            <p>ফ্রি-টিয়ার মডেল (যেমন OpenRouter-এর <code>:free</code>) মাঝে মাঝে <code>429 UPSTREAM_RATE_LIMIT</code> দেয় — এটা স্বাভাবিক। <code>details.retryAfterSeconds</code> অনুযায়ী অপেক্ষা করে আবার চেষ্টা করলেই হয়। 400/401 এরর কখনো retry করবেন না; সেগুলো ঠিক করতে হবে।</p>
+          </div>
+        </section>
+
+        <!-- 7 DEPLOY -->
+        <section class="doc-section" id="deploy">
+          <h2>7. Deploy to Cloudflare Pages</h2>
+          <ol>
+            <li><strong>Push to GitHub</strong> — the whole project folder, with <code class="code-inline">.env</code>/<code class="code-inline">.dev.vars</code> excluded (the repo's <code class="code-inline">.gitignore</code> already does this).</li>
+            <li><strong>Create the Pages project</strong>: Cloudflare dashboard → <em>Workers &amp; Pages</em> → <em>Create</em> → <em>Pages</em> → <em>Connect to Git</em> → select the repo.</li>
+            <li><strong>Build settings</strong> — exactly as below:
+              <div class="table-wrap" style="margin-top:12px"><table class="data">
+                <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+                <tbody>
+                  <tr><td>Project name</td><td>your choice (becomes <code class="code-inline">*.pages.dev</code> subdomain)</td></tr>
+                  <tr><td>Production branch</td><td><code class="code-inline">main</code></td></tr>
+                  <tr><td>Framework preset</td><td><em>None</em></td></tr>
+                  <tr><td>Build command</td><td><code class="code-inline">npm run build</code></td></tr>
+                  <tr><td>Build output directory</td><td><code class="code-inline">out</code></td></tr>
+                  <tr><td>Root directory (Advanced)</td><td><em>leave empty</em></td></tr>
+                </tbody>
+              </table></div>
+            </li>
+            <li><strong>Set environment variables</strong>: <em>Settings → Variables and Secrets</em> → use <strong>Import .env</strong> to upload your env file in one go (or add <code class="code-inline">OPENROUTER_API_KEY</code>, <code class="code-inline">POOLSIDE_API_KEY</code> etc. manually). Add to <strong>both</strong> Production and Preview. Keys should be type <em>Secret</em>.</li>
+            <li><strong>Deploy</strong> — first build runs automatically. Every push to <code class="code-inline">main</code> redeploys.</li>
+            <li><strong>Verify</strong>: open <code class="code-inline">https://YOUR-PROJECT.pages.dev/api/v1/health</code> → should return <code class="code-inline">{"status":"ok",…}</code>.</li>
+          </ol>
+          <div class="bn">
+            <span class="bn-tag">বাংলা ব্যাখ্যা</span>
+            <p>ধাপে ধাপে: ① পুরো ফোল্ডার GitHub-এ push করুন (key ছাড়া)। ② Cloudflare-এ Workers &amp; Pages → Create → Pages → Connect to Git। ③ Build command <code>npm run build</code>, Output <code>out</code>, Root directory খালি। ④ Settings → Variables and Secrets-এ <strong>Import .env</strong> দিয়ে একবারে সব ভেরিয়েবল আপলোড করুন (বা আলাদা করে key দিন) — Production <strong>এবং</strong> Preview দুই জায়গাতেই। ⑤ ডিপ্লয় শেষে <code>/api/v1/health</code> চেক করুন। এরপর আপনার সাইটের যেকোনো পেজ (Playground, Status) ব্রাউজারে খুলেই লাইভ ব্যবহার করতে পারবেন।</p>
+          </div>
+        </section>
+
+        <!-- 8 LOCAL -->
+        <section class="doc-section" id="local">
+          <h2>8. Local development</h2>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>bash</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>npm install
+
+# Option A — Node runtime (simplest): serves site + API on :5000
+cp .env.example .env      # add your keys
+npm start
+
+# Option B — exact Cloudflare runtime (wrangler): site + API on :8787
+cp .dev.vars.example .dev.vars   # add your keys
+npm run dev
+
+# Smoke tests against a running gateway
+npm run smoke                 # add RUN_E2E=1 for a real chat call</code></pre>
+          </div>
+          <p>Then open <code class="code-inline">http://localhost:5000</code> (or <code class="code-inline">:8787</code>) — the full site with the playground runs right next to the API.</p>
+        </section>
+
+        <!-- 9 TROUBLESHOOTING -->
+        <section class="doc-section" id="troubleshooting" style="margin-bottom:0">
+          <h2>9. Troubleshooting</h2>
+          <div class="table-wrap"><table class="data">
+            <thead><tr><th>Symptom</th><th>Code</th><th>Fix</th></tr></thead>
+            <tbody>
+              <tr><td>"provider is not configured"</td><td><code class="code-inline">PROVIDER_NOT_CONFIGURED</code></td><td>Env var missing on the server — add it and redeploy (Cloudflare needs a new deployment to see new vars).</td></tr>
+              <tr><td>"rejected the API key"</td><td><code class="code-inline">UPSTREAM_AUTH_ERROR</code></td><td>Key invalid/revoked — re-check the value in the dashboard (no quotes, no spaces).</td></tr>
+              <tr><td>Free model returns 429 often</td><td><code class="code-inline">UPSTREAM_RATE_LIMIT</code></td><td>Shared free pool is busy — auto-failover will hop to the next provider; keep the request as-is or set a paid default model.</td></tr>
+              <tr><td>All providers fail</td><td><code class="code-inline">ALL_PROVIDERS_FAILED</code></td><td>Check <code class="code-inline">error.details.attempts</code> — each failed provider with its reason; fix keys/quota or raise <code class="code-inline">FAILOVER_MAX_ROUNDS</code>.</td></tr>
+              <tr><td>"could not find the requested model"</td><td><code class="code-inline">UPSTREAM_ERROR</code></td><td>Model id typo — copy exact ids from the provider's docs.</td></tr>
+              <tr><td>Request hangs then 504</td><td><code class="code-inline">UPSTREAM_TIMEOUT</code></td><td>Raise <code class="code-inline">PROVIDER_TIMEOUT_MS</code> (default 60000).</td></tr>
+              <tr><td>Browser blocks the call</td><td>CORS error in console</td><td>Add your origin to <code class="code-inline">ALLOWED_ORIGINS</code> (comma-separated).</td></tr>
+              <tr><td>401 from your own gateway</td><td><code class="code-inline">UNAUTHORIZED</code></td><td>You set <code class="code-inline">API_SECRET_KEY</code> — clients must send <code class="code-inline">X-API-Key</code>.</td></tr>
+            </tbody>
+          </table></div>
+          <p style="margin-top:16px">Adding your own provider next? → <a href="/custom-provider/">Custom Provider guide</a></p>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="/assets/js/app-config.js" defer></script>
+  <script src="/assets/js/i18n-dict.js" defer></script>
+  <script src="/assets/js/i18n.js" defer></script>
+  <script src="/assets/js/layout.js" defer></script>
+  <script src="/assets/js/markdown.js" defer></script>
+  <script src="/assets/js/code.js" defer></script>
+  <script src="/assets/js/chatbot.js" defer></script>
+  <script>
+    (function () {
+      var links = Array.prototype.slice.call(document.querySelectorAll('#docs-nav a'));
+      var sections = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+      if (!('IntersectionObserver' in window) || !sections.length) return;
+      var current = sections[0];
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) { if (entry.isIntersecting) current = entry.target; });
+        links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + current.id); });
+      }, { rootMargin: '-80px 0px -60% 0px' });
+      sections.forEach(function (s) { observer.observe(s); });
+    })();
+  </script>
+</body>
+</html>

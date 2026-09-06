@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Endpoints — AI Gateway API</title>
+  <meta name="description" content="Full endpoint reference: GET /api/v1/health, GET /api/v1/providers, GET /api/v1/models, GET /api/v1/config, POST /api/v1/chat — with parameters, examples and response shapes." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>(function(){try{if(localStorage.getItem('aigw-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body data-page="endpoints">
+  <div id="site-header"></div>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="eyebrow" data-i18n="ep.eyebrow">Endpoint reference</span>
+        <h1 data-i18n="ep.title">Endpoints</h1>
+        <p class="section-sub"><span data-i18n="ep.subtitle">Six endpoints, one consistent JSON envelope. Base URL (auto-detected on this page):</span> <code class="code-inline live-base">https://YOUR-DOMAIN</code></p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-block:44px 84px">
+
+      <!-- ============ HEALTH ============ -->
+      <section class="doc-section" id="health">
+        <h2 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span class="method get">GET</span> <span class="mono" style="font-size:1.15rem">/api/v1/health</span>
+        </h2>
+        <p>Public liveness probe — no authentication, no rate-limit auth requirement. Use it for uptime monitors and health checks. A legacy alias exists at <code class="code-inline">GET /health</code>.</p>
+
+        <h3>Response — 200</h3>
+        <div class="codeblock">
+          <div class="codeblock-head"><span>application/json</span><button class="copy-btn" type="button">Copy</button></div>
+          <pre><code>{
+  "status": "ok",
+  "timestamp": "2026-01-15T10:30:00.000Z",
+  "version": "1.0.0",
+  "appName": "AI Gateway API",
+  "defaultProvider": "openrouter",
+  "failover": true
+}</code></pre>
+        </div>
+
+        <div class="codeblock">
+          <div class="codeblock-head"><span>bash — try it</span><button class="copy-btn" type="button">Copy</button></div>
+          <pre><code>curl <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/health</code></pre>
+        </div>
+        <p>Live monitoring with latency history: <a href="/status/">API Status page →</a></p>
+      </section>
+
+      <!-- ============ PROVIDERS ============ -->
+      <section class="doc-section" id="providers">
+        <h2 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span class="method get">GET</span> <span class="mono" style="font-size:1.15rem">/api/v1/providers</span>
+        </h2>
+        <p>Lists every registered provider with its models and configuration status. Use it to populate provider pickers (the <a href="/playground/">Playground</a> does exactly this) or to debug missing env vars.</p>
+        <p>Auth: required only when <code class="code-inline">API_SECRET_KEY</code> is set on the server.</p>
+
+        <h3>Response — 200</h3>
+        <div class="codeblock">
+          <div class="codeblock-head"><span>application/json</span><button class="copy-btn" type="button">Copy</button></div>
+          <pre><code>{
+  "success": true,
+  "defaultProvider": "openrouter",
+  "total": 3,
+  "providers": [
+    {
+      "id": "openrouter",
+      "label": "OpenRouter",
+      "description": "Unified gateway to 200+ models…",
+      "defaultModel": "z-ai/glm-5.2:free",
+      "models": ["z-ai/glm-5.2:free", "deepseek/deepseek-chat-v3-0324:free", "…"],
+      "requiredEnvKeys": ["OPENROUTER_API_KEY"],
+      "configured": true
+    },
+    {
+      "id": "opencodezen",
+      "label": "OpenCode Zen",
+      "defaultModel": "deepseek-v4-flash-free",
+      "requiredEnvKeys": ["OPENCODEZEN_API_KEY"],
+      "configured": true
+    },
+    {
+      "id": "poolside",
+      "label": "Poolside AI",
+      "defaultModel": "poolside/laguna-s-2.1",
+      "requiredEnvKeys": ["POOLSIDE_API_KEY"],
+      "configured": true
+    },
+    {
+      "id": "custom",
+      "label": "Custom (OpenAI-compatible)",
+      "defaultModel": null,
+      "requiredEnvKeys": ["CUSTOM_BASE_URL"],
+      "configured": false
+    }
+  ]
+}</code></pre>
+        </div>
+        <p><code class="code-inline">configured</code> is <code class="code-inline">false</code> when the provider's env vars are missing — chat requests to it will fail with <code class="code-inline">PROVIDER_NOT_CONFIGURED</code>. With auto-failover enabled, those requests transparently retry the next configured provider instead.</p>
+      </section>
+
+      <!-- ============ MODELS ============ -->
+      <section class="doc-section" id="models">
+        <h2 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span class="method get">GET</span> <span class="mono" style="font-size:1.15rem">/api/v1/models</span>
+        </h2>
+        <p><strong>Live model catalog, auto-fetched from every provider.</strong> The gateway calls each provider's own <code class="code-inline">GET /models</code> endpoint in parallel, merges the results and applies the per-provider <strong>free-only policy</strong>:</p>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>Provider</th><th>What gets listed</th></tr></thead>
+          <tbody>
+            <tr><td><code class="code-inline">openrouter</code></td><td>Only <strong>:free</strong> models (e.g. <code class="code-inline">z-ai/glm-5.2:free</code>)</td></tr>
+            <tr><td><code class="code-inline">opencodezen</code></td><td>Only <strong>-free</strong> models (e.g. <code class="code-inline">deepseek-v4-flash-free</code>)</td></tr>
+            <tr><td><code class="code-inline">poolside</code>, <code class="code-inline">custom</code>, …</td><td><strong>Full catalog</strong> — every model the provider exposes</td></tr>
+          </tbody>
+        </table></div>
+        <p>OpenCode Zen's catalog is public, so it is listed even before its API key is set; every other provider needs its key configured. Results are cached in memory for <code class="code-inline">MODELS_CACHE_TTL_MS</code> (default 6 h).</p>
+
+        <h3>Query parameters</h3>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>Param</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code class="code-inline">refresh=1</code></td><td>Bypass the cache and re-fetch all catalogs now (Models page button + admin panel).</td></tr>
+            <tr><td><code class="code-inline">provider=&lt;id&gt;</code></td><td>Limit the response to a single provider id.</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Example</h3>
+        <div class="codeblock">
+          <div class="codeblock-head"><span>bash — try it</span><button class="copy-btn" type="button">Copy</button></div>
+          <pre><code>curl <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/models?provider=openrouter</code></pre>
+        </div>
+
+        <h3>Response — 200</h3>
+        <div class="codeblock">
+          <div class="codeblock-head"><span>application/json</span><button class="copy-btn" type="button">Copy</button></div>
+          <pre><code>{
+  "success": true,
+  "object": "list",
+  "total": 28,
+  "freeOnlyPolicy": [
+    { "provider": "openrouter", "freeOnly": true },
+    { "provider": "opencodezen", "freeOnly": true },
+    { "provider": "poolside", "freeOnly": false }
+  ],
+  "providers": [
+    { "id": "openrouter", "label": "OpenRouter", "status": "ok", "freeOnly": true,
+      "total": 19, "totalBeforeFilter": 214,
+      "models": [ { "id": "z-ai/glm-5.2:free", "object": "model", "owned_by": "z-ai", "provider": "openrouter", "free": true } ] },
+    { "id": "opencodezen", "label": "OpenCode Zen", "status": "ok", "freeOnly": true, "total": 7,
+      "models": [ { "id": "deepseek-v4-flash-free", "object": "model", "owned_by": "opencode", "provider": "opencodezen", "free": true } ] },
+    { "id": "poolside", "label": "Poolside AI", "status": "ok", "freeOnly": false, "total": 2,
+      "models": [ { "id": "poolside/laguna-s-2.1", "object": "model", "owned_by": "poolside", "provider": "poolside", "free": false } ] }
+  ],
+  "data": [ { "id": "z-ai/glm-5.2:free", "object": "model", "owned_by": "z-ai", "provider": "openrouter", "free": true } ],
+  "cache": { "hit": false, "updatedAt": "2026-09-05T04:00:00.000Z", "ttlMs": 21600000, "nextRefreshAt": "2026-09-05T10:00:00.000Z" }
+}</code></pre>
+        </div>
+        <p>One provider failing never fails the endpoint — its error is reported inside <code class="code-inline">providers[].error</code> while the others still return data. Browse the catalog visually on the <a href="/models/">Models page</a>.</p>
+      </section>
+
+      <!-- ============ CONFIG ============ -->
+      <section class="doc-section" id="config">
+        <h2 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span class="method get">GET</span> <span class="mono" style="font-size:1.15rem">/api/v1/config</span>
+        </h2>
+        <p>Public runtime configuration: app name/version from your env vars, the <strong>auto-detected base URL</strong>, failover settings and which providers are currently configured. The docs site reads this so a single <code class="code-inline">.env</code> change rebrands every page.</p>
+        <h3>Response — 200</h3>
+        <div class="codeblock">
+          <div class="codeblock-head"><span>application/json</span><button class="copy-btn" type="button">Copy</button></div>
+          <pre><code>{
+  "success": true,
+  "appName": "AI Gateway API",
+  "version": "1.0.0",
+  "apiBaseUrl": "https://aigatewaybd.pages.dev",
+  "defaultProvider": "openrouter",
+  "failover": { "enabled": true, "maxRounds": 3, "retryDelayMs": 800 },
+  "providers": [ { "id": "openrouter", "configured": true, "defaultModel": "z-ai/glm-5.2:free" } ]
+}</code></pre>
+        </div>
+      </section>
+
+      <!-- ============ GET CHAT (browser-clickable) ============ -->
+      <section class="doc-section" id="chat-get">
+        <h2 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span class="method get">GET</span> <span class="mono" style="font-size:1.15rem">/api/v1/chat?prompt=…</span>
+          <span class="method get" style="background:var(--ok-soft);color:var(--ok)">GET</span> <span class="mono" style="font-size:1.15rem"><a class="try-link" href="/ask?prompt=Say%20hello%20in%20Bangla">/ask?prompt=…</a></span>
+        </h2>
+        <p data-i18n-html="ep.getchat.intro"><strong>The zero-setup entry point:</strong> open the URL in any browser and the JSON answer appears directly — no request headers, no body, no API key (provider keys stay server-side). The short custom route <code class="code-inline">/ask</code> is an alias that serves the exact same handler, so both URLs work identically. Perfect for integrations anywhere a plain URL works: other apps, n8n/Make, spreadsheets, QR codes, <code class="code-inline">&lt;img&gt;</code> sources…</p>
+        <p data-i18n-html="ep.getchat.click"><strong>Click and see it live:</strong> <a class="try-link" href="/ask?prompt=Explain%20failover%20in%20one%20sentence">/ask?prompt=Explain failover in one sentence</a></p>
+
+        <h3 data-i18n="ep.getchat.params">Query parameters</h3>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>Param</th><th data-i18n="ep.thDescription">Description</th></tr></thead>
+          <tbody>
+            <tr><td><code class="code-inline">prompt</code></td><td data-i18n-html="ep.getchat.p1">Required. The question (aliases: <code class="code-inline">q, text, message, p</code>). URL-encode it: spaces as <code class="code-inline">%20</code> or <code class="code-inline">+</code>.</td></tr>
+            <tr><td><code class="code-inline">provider</code></td><td data-i18n="ep.getchat.p2">Optional. Pin one provider; without it the auto-failover chain picks.</td></tr>
+            <tr><td><code class="code-inline">model</code></td><td data-i18n="ep.getchat.p3">Optional. Model id override (see GET /api/v1/models).</td></tr>
+            <tr><td><code class="code-inline">system_prompt</code></td><td data-i18n-html="ep.getchat.p4">Optional. Instruction for the AI (alias: <code class="code-inline">system</code>).</td></tr>
+            <tr><td><code class="code-inline">temperature</code> / <code class="code-inline">max_tokens</code></td><td data-i18n="ep.getchat.p5">Optional. Same meaning as the POST body fields.</td></tr>
+            <tr><td><code class="code-inline">failover</code></td><td data-i18n-html="ep.getchat.p6">Optional. <code class="code-inline">false</code> = only the named provider, no fallback.</td></tr>
+            <tr><td><code class="code-inline">raw=1</code></td><td data-i18n="ep.getchat.p7">Return the plain-text reply only (Content-Type: text/plain) — handy for scripts and spreadsheets.</td></tr>
+            <tr><td><code class="code-inline">pretty=0</code></td><td data-i18n="ep.getchat.p8">Compact JSON (default output is pretty-printed for browsers).</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3 data-i18n="ep.getchat.examples">Click-to-try examples (base URL auto-detected)</h3>
+        <div class="codeblock">
+          <div class="codeblock-head"><span>GET — JSON</span><button class="copy-btn" type="button" data-i18n="common.copy">Copy</button></div>
+          <pre><code>&lt;a href="&lt;span class=\"live-base\"&gt;https://YOUR-DOMAIN&lt;/span&gt;/ask?prompt=Say+hello+in+Bangla"&gt;Ask my gateway&lt;/a&gt;
+
+# same thing, plain text only:
+&lt;span class="live-base"&gt;https://YOUR-DOMAIN&lt;/span&gt;/ask?prompt=Say+hello+in+Bangla&amp;raw=1
+
+# pin a provider + cap the answer length:
+&lt;span class="live-base"&gt;https://YOUR-DOMAIN&lt;/span&gt;/api/v1/chat?prompt=Go+channels+in+one+line&amp;provider=poolside&amp;max_tokens=80</code></pre>
+        </div>
+        <p class="small muted" data-i18n-html="ep.getchat.note">Rate limit: the same chat limiter applies (default 30 requests/min per IP). Errors come back as the standard JSON envelope — a missing prompt returns <code class="code-inline">MISSING_PROMPT</code> with usage examples built in.</p>
+      </section>
+
+      <!-- ============ CHAT (POST) ============ -->
+      <section class="doc-section" id="chat">
+        <h2 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span class="method post">POST</span> <span class="mono" style="font-size:1.15rem">/api/v1/chat</span>
+        </h2>
+        <p data-i18n-html="ep.postchat.intro">Chat completion via any configured provider — with <strong>automatic failover</strong>: if the chosen provider errors, the gateway retries the next one until a response arrives (disable per request with <code class="code-inline">"failover": false</code>). Accepts a simple message or a full multi-turn conversation. This is the endpoint your apps will call 95% of the time.</p>
+
+        <h3>Request body</h3>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code class="code-inline">message</code></td><td>string</td><td>one of message / messages</td><td>Simple single-turn input (≤ 8000 chars).</td></tr>
+            <tr><td><code class="code-inline">messages</code></td><td>array</td><td>one of message / messages</td><td>Multi-turn turns: <code class="code-inline">{role, content}</code> — roles: system, user, assistant (≤ 50 items).</td></tr>
+            <tr><td><code class="code-inline">provider</code></td><td>string</td><td>optional</td><td><code class="code-inline">openrouter</code> | <code class="code-inline">opencodezen</code> | <code class="code-inline">poolside</code> | <code class="code-inline">custom</code>. Default: <code class="code-inline">DEFAULT_PROVIDER</code>; omit to let auto-failover pick the whole chain.</td></tr>
+            <tr><td><code class="code-inline">model</code></td><td>string</td><td>optional</td><td>Model override for this request only.</td></tr>
+            <tr><td><code class="code-inline">failover</code></td><td>boolean</td><td>optional</td><td><code class="code-inline">false</code> = only try the named provider, no automatic fallback.</td></tr>
+            <tr><td><code class="code-inline">system_prompt</code></td><td>string</td><td>optional</td><td>System instruction (simple style only).</td></tr>
+            <tr><td><code class="code-inline">temperature</code></td><td>number</td><td>optional</td><td>0–2, default 0.7.</td></tr>
+            <tr><td><code class="code-inline">max_tokens</code></td><td>integer</td><td>optional</td><td>1–8192; omitted upstream when unset.</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Example — simple</h3>
+        <div class="codeblock">
+          <div class="codeblock-head"><span>bash</span><button class="copy-btn" type="button">Copy</button></div>
+          <pre><code>curl -X POST <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "provider": "openrouter",
+    "message": "What is the meaning of life?"
+  }'</code></pre>
+        </div>
+
+        <h3>Example — multi-turn with options</h3>
+        <div class="codeblock">
+          <div class="codeblock-head"><span>bash</span><button class="copy-btn" type="button">Copy</button></div>
+          <pre><code>curl -X POST <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "provider": "poolside",
+    "messages": [
+      { "role": "system", "content": "You are a senior Go mentor." },
+      { "role": "user",   "content": "What are channels in Go?" }
+    ],
+    "temperature": 0.4,
+    "max_tokens": 500
+  }'</code></pre>
+        </div>
+
+        <h3>Response — 200</h3>
+        <div class="codeblock">
+          <div class="codeblock-head"><span>application/json</span><button class="copy-btn" type="button">Copy</button></div>
+          <pre><code>{
+  "success": true,
+  "provider": "poolside",
+  "reply": "Channels are typed conduits that let goroutines communicate safely…",
+  "model": "poolside/laguna-s-2.1",
+  "usage": { "prompt_tokens": 21, "completion_tokens": 36, "total_tokens": 57 },
+  "failover": { "enabled": true, "attempts": [], "rounds": 1, "servedOnRound": 1 }
+}</code></pre>
+        </div>
+
+        <h3>Error responses</h3>
+        <div class="table-wrap"><table class="data">
+          <thead><tr><th>HTTP</th><th>Code</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td>400</td><td><code class="code-inline">VALIDATION_ERROR</code> / <code class="code-inline">INVALID_JSON</code></td><td>Malformed body or fields.</td></tr>
+            <tr><td>400</td><td><code class="code-inline">UNKNOWN_PROVIDER</code></td><td><code class="code-inline">provider</code> is not registered.</td></tr>
+            <tr><td>429</td><td><code class="code-inline">RATE_LIMITED</code> / <code class="code-inline">UPSTREAM_RATE_LIMIT</code></td><td>Your limit or the provider's limit.</td></tr>
+            <tr><td>500</td><td><code class="code-inline">PROVIDER_NOT_CONFIGURED</code> / <code class="code-inline">UPSTREAM_AUTH_ERROR</code> / <code class="code-inline">NO_PROVIDER_CONFIGURED</code></td><td>Server-side env/key problem.</td></tr>
+            <tr><td>502</td><td><code class="code-inline">ALL_PROVIDERS_FAILED</code></td><td>Auto-failover exhausted every configured provider — see <code class="code-inline">error.details.attempts</code>.</td></tr>
+            <tr><td>502 / 503 / 504</td><td><code class="code-inline">UPSTREAM_ERROR</code> / <code class="code-inline">UPSTREAM_UNAVAILABLE</code> / <code class="code-inline">UPSTREAM_TIMEOUT</code></td><td>Provider-side failure — auto-failover usually retries it on another provider.</td></tr>
+          </tbody>
+        </table></div>
+        <p>Full error table: <a href="/docs/#errors">API Docs → Error codes</a>. Want to click instead of curl? <a href="/playground/">Open the Playground →</a></p>
+      </section>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="/assets/js/app-config.js" defer></script>
+  <script src="/assets/js/i18n-dict.js" defer></script>
+  <script src="/assets/js/i18n.js" defer></script>
+  <script src="/assets/js/layout.js" defer></script>
+  <script src="/assets/js/markdown.js" defer></script>
+  <script src="/assets/js/code.js" defer></script>
+  <script src="/assets/js/chatbot.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel | AI Gateway API</title>
+  <meta name="description" content="Owner-only admin panel. Connects to the GitHub repo with a personal access token and commits site/provider configuration changes directly from the browser." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>(function(){try{if(localStorage.getItem('aigw-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body data-page="admin">
+  <div id="site-header"></div>
+
+  <main>
+    <section class="section" style="padding-top:44px">
+      <div class="container admin-wrap">
+        <span class="eyebrow" data-i18n="admin.eyebrow">Owner only</span>
+        <h1 class="section-title" style="font-size:2rem"><span data-i18n="admin.title1">Admin</span> <span class="grad-text" data-i18n="admin.title2">Panel</span></h1>
+        <p class="section-sub" style="max-width:860px" data-i18n-html="admin.subtitle">
+          Sign in with a <strong>GitHub token + repository name</strong>. The panel loads
+          <code class="code-inline">config/*.json</code> from your repo, and every change you save is
+          <strong>committed straight back to GitHub</strong> via the GitHub API —
+          Cloudflare Pages then rebuilds and redeploys the site automatically (usually 1–2 minutes).
+          Full CRUD: AI Providers, AI Models, chatbot Knowledge, site branding.
+        </p>
+
+        <!-- ================= CONNECT (not signed in) ================= -->
+        <div class="admin-card" id="connect-card" style="max-width:640px;margin:26px auto 0">
+          <h2 style="margin-top:0;font-size:1.2rem" data-i18n="admin.connect.title">Connect to your repository</h2>
+          <div id="connect-alert"></div>
+          <div class="field">
+            <label class="label" for="gh-repo" data-i18n="admin.connect.repo">GitHub repository</label>
+            <input class="input" id="gh-repo" type="text" placeholder="owner/repo  — or paste the full URL" autocomplete="off" spellcheck="false" />
+            <p class="small muted" style="margin:6px 0 0"><span data-i18n="admin.connect.repoHint">e.g.</span> <code class="code-inline">mdmubarokhosin/aigateway</code></p>
+          </div>
+          <div class="field">
+            <label class="label" for="gh-branch" data-i18n="admin.connect.branch">Branch</label>
+            <input class="input" id="gh-branch" type="text" placeholder="main" value="main" autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="field">
+            <label class="label" for="gh-token">GitHub PAT <span class="opt">(fine-grained personal access token)</span></label>
+            <input class="input" id="gh-token" type="password" placeholder="github_pat_… / ghp_…" autocomplete="off" spellcheck="false" />
+            <p class="small muted" style="margin:6px 0 0" data-i18n-html="admin.connect.tokenHint">
+              Create one at <strong>github.com → Settings → Developer settings → Fine-grained tokens</strong>: select
+              <em>Only this repository</em> and grant <em>Contents: Read and write</em>. That is the only permission needed.
+            </p>
+          </div>
+          <button class="btn btn-primary" id="connect-btn" type="button" style="width:100%" data-i18n="admin.connect.cta">Connect &amp; load configuration</button>
+          <div class="admin-token-note">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex:0 0 auto;margin-top:2px"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span data-i18n-html="admin.connect.security"><strong>Security:</strong> the token is kept in <em>session storage</em> — it lives in this browser tab only, is sent exclusively to <code>api.github.com</code>, and disappears when you close the tab. Never commit tokens to the repo.</span>
+          </div>
+        </div>
+
+        <!-- ================= DASHBOARD (signed in) ================= -->
+        <div id="dashboard" style="display:none">
+          <div class="admin-statusbar">
+            <span><span class="sdot" style="background:var(--ok)"></span><span data-i18n="admin.connected">Connected</span></span>
+            <span class="mono" id="st-repo">—</span>
+            <span class="mono" id="st-branch">—</span>
+            <span id="st-user">—</span>
+            <span style="flex:1"></span>
+            <button class="btn btn-primary btn-sm" id="push-all-btn" type="button" data-i18n="admin.pushAll">🚀 PUSH to GitHub</button>
+            <a class="btn btn-ghost btn-sm" id="st-open-repo" href="#" target="_blank" rel="noopener"><span data-i18n="admin.openRepo">Open repo</span> ↗</a>
+            <button class="btn btn-ghost btn-sm" id="st-reload" type="button" data-i18n="admin.reloadFiles">Reload files</button>
+            <button class="btn btn-ghost btn-sm" id="signout-btn" type="button" data-i18n="admin.signout">Sign out</button>
+          </div>
+
+          <div class="admin-tabs" role="tablist" aria-label="Admin sections">
+            <button class="admin-tab active" data-tab="site" type="button" data-i18n="admin.tab.site">Site &amp; Chatbot</button>
+            <button class="admin-tab" data-tab="providers" type="button" data-i18n="admin.tab.providers">AI Providers</button>
+            <button class="admin-tab" data-tab="models" type="button" data-i18n="admin.tab.models">AI Models</button>
+            <button class="admin-tab" data-tab="knowledge" type="button" data-i18n="admin.tab.knowledge">Knowledge</button>
+            <button class="admin-tab" data-tab="raw" type="button" data-i18n="admin.tab.raw">Raw JSON</button>
+            <button class="admin-tab" data-tab="activity" type="button" data-i18n="admin.tab.activity">Activity</button>
+          </div>
+
+          <div id="admin-alert"></div>
+
+          <!-- ============ SITE SETTINGS ============ -->
+          <div class="admin-pane active" id="pane-site">
+            <div class="admin-card">
+              <h2 style="margin-top:0;font-size:1.1rem">config/site.json</h2>
+              <p class="small muted" data-i18n="admin.site.hint">Branding, announcement banner and the chat bot. Saved changes are committed to the repo → automatic Cloudflare rebuild.</p>
+              <div class="form-grid">
+                <div class="field">
+                  <label class="label" for="site-appname" data-i18n="admin.site.appName">App name</label>
+                  <input class="input" id="site-appname" type="text" />
+                </div>
+                <div class="field">
+                  <label class="label" for="site-tagline" data-i18n="admin.site.tagline">Tagline</label>
+                  <input class="input" id="site-tagline" type="text" />
+                </div>
+                <div class="field span-2">
+                  <label class="label" for="site-description" data-i18n="admin.site.description">Homepage description</label>
+                  <textarea class="textarea" id="site-description" rows="3"></textarea>
+                </div>
+              </div>
+
+              <h3 style="font-size:.98rem;margin:18px 0 6px" data-i18n="admin.site.announcement">Announcement banner</h3>
+              <div class="form-grid">
+                <div class="field span-2 switch-row" style="padding:4px 0">
+                  <span class="label" style="margin:0" data-i18n="admin.site.annEnabled">Show announcement on every page</span>
+                  <label class="switch"><input type="checkbox" id="site-ann-enabled" /><span class="slider"></span></label>
+                </div>
+                <div class="field span-2">
+                  <label class="label" for="site-ann-text" data-i18n="admin.site.annText">Announcement text</label>
+                  <input class="input" id="site-ann-text" type="text" placeholder="🎉 New provider added — OpenCode Zen!" />
+                </div>
+                <div class="field">
+                  <label class="label" for="site-ann-link" data-i18n="admin.site.annLink">Link <span class="opt">(optional)</span></label>
+                  <input class="input" id="site-ann-link" type="text" placeholder="/docs/" />
+                </div>
+                <div class="field">
+                  <label class="label" for="site-ann-label" data-i18n="admin.site.annLabel">Link label</label>
+                  <input class="input" id="site-ann-label" type="text" placeholder="Learn more" />
+                </div>
+              </div>
+
+              <h3 style="font-size:.98rem;margin:18px 0 6px"><span data-i18n="admin.site.chatbot">Chat bot</span> <span class="opt" style="font-weight:400;color:var(--faint);font-size:.8rem" data-i18n="admin.site.chatbotHint">— runs on your own gateway (live API self-test)</span></h3>
+              <div class="form-grid">
+                <div class="field span-2 switch-row" style="padding:4px 0">
+                  <span class="label" style="margin:0" data-i18n="admin.site.botEnabled">Enable the chat bot widget</span>
+                  <label class="switch"><input type="checkbox" id="bot-enabled" /><span class="slider"></span></label>
+                </div>
+                <div class="field">
+                  <label class="label" for="bot-name" data-i18n="admin.site.botName">Bot name</label>
+                  <input class="input" id="bot-name" type="text" />
+                </div>
+                <div class="field">
+                  <label class="label" for="bot-temp" data-i18n="admin.site.botTemp">Temperature <span class="opt">(0–2)</span></label>
+                  <input class="input" id="bot-temp" type="number" min="0" max="2" step="0.1" />
+                </div>
+                <div class="field span-2">
+                  <label class="label" for="bot-welcome" data-i18n="admin.site.botWelcome">Welcome message</label>
+                  <textarea class="textarea" id="bot-welcome" rows="3"></textarea>
+                </div>
+                <div class="field span-2">
+                  <label class="label" for="bot-quick" data-i18n="admin.site.botQuick">Quick questions <span class="opt">(one per line, max 6)</span></label>
+                  <textarea class="textarea" id="bot-quick" rows="4"></textarea>
+                </div>
+                <div class="field">
+                  <label class="label" for="bot-maxtokens" data-i18n="admin.site.botMaxTokens">Max tokens per answer</label>
+                  <input class="input" id="bot-maxtokens" type="number" min="100" max="4096" step="50" />
+                </div>
+              </div>
+              <div class="admin-actions">
+                <button class="btn btn-primary" id="save-site" type="button" data-i18n="admin.commit">Commit changes to GitHub</button>
+                <span class="commit-note" id="site-dirty-note" data-i18n="admin.noChanges">No changes yet.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ AI PROVIDERS (FULL CRUD) ============ -->
+          <div class="admin-pane" id="pane-providers">
+            <div class="admin-card">
+              <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+                <div style="flex:1;min-width:260px">
+                  <h2 style="margin-top:0;font-size:1.1rem">config/providers.json — <span data-i18n="admin.providers.fullCrud">FULL CRUD</span></h2>
+                  <p class="small muted" data-i18n-html="admin.providers.hint">
+                    Add, edit, delete, reorder AI providers. A provider = one OpenAI-compatible endpoint.
+                    <strong>API keys are NEVER managed here</strong> — they live in Cloudflare Pages → Variables and secrets
+                    (see the <a href="/env-setup/">Env Setup</a> page). Saving commits providers.json → automatic rebuild.
+                  </p>
+                </div>
+                <button class="btn btn-primary btn-sm" id="provider-add" type="button">＋ <span data-i18n="admin.providers.add">Add provider</span></button>
+              </div>
+
+              <!-- Add / Edit provider form (hidden by default) -->
+              <div id="provider-form" style="display:none;margin-top:16px" class="admin-edit-card">
+                <h3 style="margin:0 0 12px;font-size:1rem" id="provider-form-title">Provider</h3>
+                <div class="form-grid">
+                  <div class="field">
+                    <label class="label" for="pf-id">id <span class="opt">(unique, lowercase, e.g. "together")</span></label>
+                    <input class="input" id="pf-id" type="text" placeholder="together" spellcheck="false" />
+                  </div>
+                  <div class="field">
+                    <label class="label" for="pf-label" data-i18n="admin.providers.fLabel">Display label</label>
+                    <input class="input" id="pf-label" type="text" placeholder="Together AI" />
+                  </div>
+                  <div class="field span-2">
+                    <label class="label" for="pf-desc" data-i18n="admin.providers.fDesc">Description (API-facing)</label>
+                    <input class="input" id="pf-desc" type="text" />
+                  </div>
+                  <div class="field span-2">
+                    <label class="label" for="pf-tagline" data-i18n="admin.providers.fTagline">Tagline (shown on cards)</label>
+                    <input class="input" id="pf-tagline" type="text" />
+                  </div>
+                  <div class="field">
+                    <label class="label" for="pf-baseurl">Base URL <span class="opt">(OpenAI-compatible, e.g. https://api.together.xyz/v1)</span></label>
+                    <input class="input" id="pf-baseurl" type="text" spellcheck="false" />
+                  </div>
+                  <div class="field">
+                    <label class="label" for="pf-baseurlenv">Base URL env key <span class="opt">(alternative to Base URL, e.g. CUSTOM_BASE_URL)</span></label>
+                    <input class="input" id="pf-baseurlenv" type="text" spellcheck="false" />
+                  </div>
+                  <div class="field">
+                    <label class="label" for="pf-keyenv" data-i18n="admin.providers.fKeyEnv">API key env var name</label>
+                    <input class="input" id="pf-keyenv" type="text" placeholder="TOGETHER_API_KEY" spellcheck="false" />
+                  </div>
+                  <div class="field">
+                    <label class="label" for="pf-modelenv" data-i18n="admin.providers.fModelEnv">Default model env var name</label>
+                    <input class="input" id="pf-modelenv" type="text" placeholder="TOGETHER_MODEL" spellcheck="false" />
+                  </div>
+                  <div class="field">
+                    <label class="label" for="pf-defaultmodel" data-i18n="admin.providers.fDefaultModel">Default model id</label>
+                    <input class="input" id="pf-defaultmodel" type="text" placeholder="meta-llama/Llama-3-70b" spellcheck="false" />
+                  </div>
+                  <div class="field">
+                    <label class="label" for="pf-docsurl" data-i18n="admin.providers.fDocsUrl">Docs URL <span class="opt">(optional)</span></label>
+                    <input class="input" id="pf-docsurl" type="text" spellcheck="false" />
+                  </div>
+                </div>
+                <div class="form-grid" style="margin-top:4px">
+                  <div class="field switch-row" style="padding:4px 0">
+                    <span class="label" style="margin:0" data-i18n="admin.providers.fEnabled">Enabled (appears on the site + API)</span>
+                    <label class="switch"><input type="checkbox" id="pf-enabled" checked /><span class="slider"></span></label>
+                  </div>
+                  <div class="field switch-row" style="padding:4px 0">
+                    <span class="label" style="margin:0" data-i18n="admin.providers.fFreeOnly">Free-only catalog <span class="opt">(:free / -free models)</span></span>
+                    <label class="switch"><input type="checkbox" id="pf-freeonly" /><span class="slider"></span></label>
+                  </div>
+                  <div class="field switch-row" style="padding:4px 0">
+                    <span class="label" style="margin:0" data-i18n="admin.providers.fPublicModels">Public model catalog <span class="opt">(list models without key)</span></span>
+                    <label class="switch"><input type="checkbox" id="pf-publicmodels" /><span class="slider"></span></label>
+                  </div>
+                  <div class="field switch-row" style="padding:4px 0">
+                    <span class="label" style="margin:0" data-i18n="admin.providers.fOrHeaders">OpenRouter-style attribution headers</span>
+                    <label class="switch"><input type="checkbox" id="pf-orheaders" /><span class="slider"></span></label>
+                  </div>
+                  <div class="field switch-row" style="padding:4px 0">
+                    <span class="label" style="margin:0" data-i18n="admin.providers.fKeyOptional">API key optional <span class="opt">(Ollama / LM Studio style)</span></span>
+                    <label class="switch"><input type="checkbox" id="pf-keyoptional" /><span class="slider"></span></label>
+                  </div>
+                </div>
+                <div class="admin-actions" style="margin-top:10px">
+                  <button class="btn btn-primary btn-sm" id="provider-form-save" type="button" data-i18n="admin.providers.saveProvider">Save provider (locally)</button>
+                  <button class="btn btn-ghost btn-sm" id="provider-form-cancel" type="button" data-i18n="admin.cancelEdit">Cancel</button>
+                  <span class="small muted" id="provider-form-note"></span>
+                </div>
+              </div>
+
+              <!-- Provider list -->
+              <div id="provider-crud-list" style="margin-top:18px"></div>
+
+              <div class="admin-actions">
+                <button class="btn btn-primary" id="save-providers" type="button" data-i18n="admin.commitProviders">Commit providers.json to GitHub</button>
+                <span class="commit-note" id="providers-dirty-note" data-i18n="admin.noChanges">No changes yet.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ AI MODELS (FULL CRUD) ============ -->
+          <div class="admin-pane" id="pane-models">
+            <div class="admin-card">
+              <h2 style="margin-top:0;font-size:1.1rem" data-i18n="admin.models.title">Curated models per provider — full CRUD</h2>
+              <p class="small muted" data-i18n-html="admin.models.hint">
+                These pinned models are ALWAYS listed on the <a href="/models/">Models page</a> and pre-seeded in the
+                Playground, merged with each provider's live auto-fetched catalog (marked <em>Admin pinned</em>).
+                Edit the list here; saving commits providers.json → automatic rebuild.
+              </p>
+              <div class="form-grid">
+                <div class="field">
+                  <label class="label" for="models-provider" data-i18n="admin.models.pick">Provider</label>
+                  <select class="input" id="models-provider"></select>
+                </div>
+              </div>
+              <div id="models-crud-list" style="margin-top:14px"></div>
+
+              <h3 style="font-size:.95rem;margin:20px 0 8px" data-i18n="admin.models.addTitle">Add a model</h3>
+              <div class="form-grid">
+                <div class="field">
+                  <label class="label" for="mf-id">Model id <span class="opt">(exact upstream id)</span></label>
+                  <input class="input" id="mf-id" type="text" placeholder="deepseek-ai/DeepSeek-V3:free" spellcheck="false" />
+                </div>
+                <div class="field">
+                  <label class="label" for="mf-label" data-i18n="admin.models.fLabel">Display label <span class="opt">(optional)</span></label>
+                  <input class="input" id="mf-label" type="text" placeholder="DeepSeek V3 (free)" />
+                </div>
+                <div class="field switch-row" style="padding:4px 0">
+                  <span class="label" style="margin:0" data-i18n="admin.models.fDefault">Provider default</span>
+                  <label class="switch"><input type="checkbox" id="mf-default" /><span class="slider"></span></label>
+                </div>
+                <div class="field" style="display:flex;align-items:flex-end">
+                  <button class="btn btn-primary btn-sm" id="model-add" type="button" style="width:100%">＋ <span data-i18n="admin.models.add">Add model</span></button>
+                </div>
+              </div>
+
+              <div class="admin-actions">
+                <button class="btn btn-primary" id="save-models" type="button" data-i18n="admin.commitModels">Commit providers.json to GitHub</button>
+                <span class="commit-note" id="models-dirty-note" data-i18n="admin.noChanges">No changes yet.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ KNOWLEDGE (CHATBOT AGENT, FULL CRUD) ============ -->
+          <div class="admin-pane" id="pane-knowledge">
+            <div class="admin-card">
+              <h2 style="margin-top:0;font-size:1.1rem">config/knowledge.json — <span data-i18n="admin.knowledge.title">chatbot agent knowledge</span></h2>
+              <p class="small muted" data-i18n-html="admin.knowledge.hint">
+                Every entry is injected into the chatbot's (and Telegram bot's) brain, so the assistant can answer
+                questions about THIS site with real facts. Markdown is allowed. Saving commits knowledge.json → rebuild.
+              </p>
+
+              <div id="knowledge-crud-list"></div>
+
+              <h3 style="font-size:.95rem;margin:20px 0 8px" data-i18n="admin.knowledge.addTitle">Add / edit an entry</h3>
+              <div class="form-grid">
+                <div class="field span-2">
+                  <label class="label" for="kf-topic" data-i18n="admin.knowledge.fTopic">Topic / question</label>
+                  <input class="input" id="kf-topic" type="text" placeholder="How do I get an API key?" />
+                </div>
+                <div class="field span-2">
+                  <label class="label" for="kf-tags" data-i18n="admin.knowledge.fTags">Tags <span class="opt">(comma separated)</span></label>
+                  <input class="input" id="kf-tags" type="text" placeholder="key, api, auth" />
+                </div>
+                <div class="field span-2">
+                  <label class="label" for="kf-answer" data-i18n="admin.knowledge.fAnswer">Answer <span class="opt">(markdown allowed)</span></label>
+                  <textarea class="textarea" id="kf-answer" rows="5"></textarea>
+                </div>
+              </div>
+              <div class="admin-actions" style="margin-top:8px">
+                <button class="btn btn-primary btn-sm" id="knowledge-add" type="button">＋ <span data-i18n="admin.knowledge.add">Save entry (locally)</span></button>
+                <button class="btn btn-ghost btn-sm" id="knowledge-edit-cancel" type="button" style="display:none" data-i18n="admin.cancelEdit">Cancel edit</button>
+                <span class="small muted" id="knowledge-form-note"></span>
+              </div>
+
+              <div class="admin-actions" style="border-top:1px solid var(--border);padding-top:16px">
+                <button class="btn btn-primary" id="save-knowledge" type="button" data-i18n="admin.commitKnowledge">Commit knowledge.json to GitHub</button>
+                <span class="commit-note" id="knowledge-dirty-note" data-i18n="admin.noChanges">No changes yet.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ RAW JSON ============ -->
+          <div class="admin-pane" id="pane-raw">
+            <div class="admin-card">
+              <h2 style="margin-top:0;font-size:1.1rem" data-i18n="admin.raw.title">Raw file editor</h2>
+              <p class="small muted" data-i18n="admin.raw.hint">Direct JSON editing for power users. Invalid JSON is rejected before commit.</p>
+              <div class="field">
+                <label class="label">config/site.json</label>
+                <textarea class="textarea mono" id="raw-site" rows="14" spellcheck="false"></textarea>
+              </div>
+              <button class="btn btn-primary btn-sm" id="save-raw-site" type="button">Commit config/site.json</button>
+              <hr style="border:0;border-top:1px solid var(--border);margin:22px 0" />
+              <div class="field">
+                <label class="label">config/providers.json</label>
+                <textarea class="textarea mono" id="raw-providers" rows="12" spellcheck="false"></textarea>
+              </div>
+              <button class="btn btn-primary btn-sm" id="save-raw-providers" type="button">Commit config/providers.json</button>
+              <hr style="border:0;border-top:1px solid var(--border);margin:22px 0" />
+              <div class="field">
+                <label class="label">config/knowledge.json</label>
+                <textarea class="textarea mono" id="raw-knowledge" rows="10" spellcheck="false"></textarea>
+              </div>
+              <button class="btn btn-primary btn-sm" id="save-raw-knowledge" type="button">Commit config/knowledge.json</button>
+            </div>
+          </div>
+
+          <!-- ============ ACTIVITY ============ -->
+          <div class="admin-pane" id="pane-activity">
+            <div class="admin-card">
+              <h2 style="margin-top:0;font-size:1.1rem"><span data-i18n="admin.activity.title">Recent commits touching</span> <code class="code-inline">config/</code></h2>
+              <p class="small muted" data-i18n="admin.activity.hint">Every admin save appears here. Cloudflare Pages picks up each commit and redeploys automatically.</p>
+              <div class="commit-list" id="commit-list"><p class="small muted">Loading…</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="/assets/js/app-config.js" defer></script>
+  <script src="/assets/js/i18n-dict.js" defer></script>
+  <script src="/assets/js/i18n.js" defer></script>
+  <script src="/assets/js/layout.js" defer></script>
+  <script src="/assets/js/markdown.js" defer></script>
+  <script src="/assets/js/code.js" defer></script>
+  <script src="/assets/js/admin.js" defer></script>
+</body>
+</html>

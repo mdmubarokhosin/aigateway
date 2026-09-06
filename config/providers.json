@@ -1,0 +1,101 @@
+{
+  "version": 2,
+  "_doc": "Admin-panel editable (committed from /admin via the GitHub API). Every change rebuilds Cloudflare Pages automatically. scripts/build.mjs regenerates src/providers/generated-data.js from this file; src/providers/registry.js instantiates every enabled provider from it. API KEYS ARE NEVER STORED HERE — they are Cloudflare env secrets (see /env-setup).",
+  "order": ["openrouter", "opencodezen", "poolside", "custom"],
+  "hidden": [],
+  "providers": {
+    "openrouter": {
+      "id": "openrouter",
+      "label": "OpenRouter",
+      "description": "Unified gateway to 200+ models (GLM, Llama, DeepSeek, Gemini, Qwen...) with free-tier options.",
+      "tagline": "Unified gateway to 200+ models — the free tier (\":free\" models) is auto-listed.",
+      "docsUrl": "https://openrouter.ai/docs",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "baseUrlEnvKey": null,
+      "apiKeyEnv": "OPENROUTER_API_KEY",
+      "apiKeyOptional": false,
+      "modelEnvKey": "OPENROUTER_MODEL",
+      "extraModelEnvKeys": ["MODEL_NAME"],
+      "defaultModel": "z-ai/glm-5.2:free",
+      "freeOnly": true,
+      "allowPublicModels": false,
+      "openrouterHeaders": true,
+      "supportsMaxTokens": true,
+      "enabled": true,
+      "models": [
+        { "id": "z-ai/glm-5.2:free", "label": "GLM 5.2 (free)", "default": true },
+        { "id": "deepseek/deepseek-chat-v3-0324:free", "label": "DeepSeek Chat v3 (free)", "default": false },
+        { "id": "meta-llama/llama-3.3-70b-instruct:free", "label": "Llama 3.3 70B (free)", "default": false },
+        { "id": "google/gemma-3-27b-it:free", "label": "Gemma 3 27B (free)", "default": false },
+        { "id": "qwen/qwen-2.5-72b-instruct:free", "label": "Qwen 2.5 72B (free)", "default": false }
+      ]
+    },
+    "opencodezen": {
+      "id": "opencodezen",
+      "label": "OpenCode Zen",
+      "description": "opencode.ai Zen gateway — coding-tuned frontier models; free tier models like deepseek-v4-flash-free, nemotron-3.5-lightning-free.",
+      "tagline": "opencode.ai Zen coding models — only the \"-free\" models are auto-listed.",
+      "docsUrl": "https://opencode.ai/docs/zen",
+      "baseUrl": "https://opencode.ai/zen/v1",
+      "baseUrlEnvKey": null,
+      "apiKeyEnv": "OPENCODEZEN_API_KEY",
+      "apiKeyOptional": false,
+      "modelEnvKey": "OPENCODEZEN_MODEL",
+      "extraModelEnvKeys": [],
+      "defaultModel": "deepseek-v4-flash-free",
+      "freeOnly": true,
+      "allowPublicModels": true,
+      "openrouterHeaders": false,
+      "supportsMaxTokens": true,
+      "enabled": true,
+      "models": [
+        { "id": "deepseek-v4-flash-free", "label": "DeepSeek v4 Flash (free)", "default": true },
+        { "id": "nemotron-3.5-lightning-free", "label": "Nemotron 3.5 Lightning (free)", "default": false },
+        { "id": "mimo-v2.5-free", "label": "MiMo v2.5 (free)", "default": false },
+        { "id": "ling-3.0-flash-fin-free", "label": "Ling 3.0 Flash Fin (free)", "default": false }
+      ]
+    },
+    "poolside": {
+      "id": "poolside",
+      "label": "Poolside AI",
+      "description": "Poolside Laguna code-intelligence models for software engineering tasks (code gen, review, refactoring).",
+      "tagline": "Poolside Laguna code-intelligence models — full catalog.",
+      "docsUrl": "https://poolside.ai",
+      "baseUrl": "https://inference.poolside.ai/v1",
+      "baseUrlEnvKey": null,
+      "apiKeyEnv": "POOLSIDE_API_KEY",
+      "apiKeyOptional": false,
+      "modelEnvKey": "POOLSIDE_MODEL",
+      "extraModelEnvKeys": [],
+      "defaultModel": "poolside/laguna-s-2.1",
+      "freeOnly": false,
+      "allowPublicModels": false,
+      "openrouterHeaders": false,
+      "supportsMaxTokens": true,
+      "enabled": true,
+      "models": [
+        { "id": "poolside/laguna-s-2.1", "label": "Laguna S 2.1", "default": true }
+      ]
+    },
+    "custom": {
+      "id": "custom",
+      "label": "Custom (OpenAI-compatible)",
+      "description": "Any OpenAI-compatible endpoint: OpenAI, DeepSeek, Together, vLLM, Ollama, LM Studio... Configure via CUSTOM_BASE_URL / CUSTOM_API_KEY / CUSTOM_MODEL.",
+      "tagline": "Any OpenAI-compatible endpoint — full catalog, zero code.",
+      "docsUrl": "/custom-provider/",
+      "baseUrl": null,
+      "baseUrlEnvKey": "CUSTOM_BASE_URL",
+      "apiKeyEnv": "CUSTOM_API_KEY",
+      "apiKeyOptional": true,
+      "modelEnvKey": "CUSTOM_MODEL",
+      "extraModelEnvKeys": [],
+      "defaultModel": null,
+      "freeOnly": false,
+      "allowPublicModels": false,
+      "openrouterHeaders": false,
+      "supportsMaxTokens": true,
+      "enabled": true,
+      "models": []
+    }
+  }
+}

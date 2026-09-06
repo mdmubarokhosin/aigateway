@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>404 — Page not found — AI Gateway API</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>(function(){try{if(localStorage.getItem('aigw-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body data-page="404">
+  <div id="site-header"></div>
+  <main>
+    <div class="not-found">
+      <div class="hero-orb o1" aria-hidden="true" style="position:absolute;top:18%;left:10%"></div>
+      <div class="hero-orb o3" aria-hidden="true" style="position:absolute;top:60%;right:12%"></div>
+      <div class="code404">404</div>
+      <h1 style="font-size:1.4rem" data-i18n="nf.title">This route returned no content</h1>
+      <p class="muted" style="max-width:440px" data-i18n="nf.body">The page you asked for does not exist. API routes return JSON 404s — this is the human one.</p>
+      <div style="display:flex;gap:12px;margin-top:18px;flex-wrap:wrap;justify-content:center">
+        <a class="btn btn-primary" href="/" data-i18n="nf.home">Back home</a>
+        <a class="btn btn-ghost" href="/docs/" data-i18n="nf.docs">Read the docs</a>
+      </div>
+      <div class="small muted" style="margin-top:30px">
+        <span data-i18n="nf.suggest">Popular destinations:</span>
+        <a href="/playground/">Playground</a> · <a href="/models/">Models</a> · <a href="/endpoints/">Endpoints</a> · <a href="/status/">Status</a>
+      </div>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="/assets/js/app-config.js" defer></script>
+  <script src="/assets/js/i18n-dict.js" defer></script>
+  <script src="/assets/js/i18n.js" defer></script>
+  <script src="/assets/js/layout.js" defer></script>
+  <script src="/assets/js/markdown.js" defer></script>
+</body>
+</html>

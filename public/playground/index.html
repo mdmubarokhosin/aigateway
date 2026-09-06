@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Playground — AI Gateway API</title>
+  <meta name="description" content="Interactive testing console for the AI Gateway: pick a provider, tune parameters and send live chat requests." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>(function(){try{if(localStorage.getItem('aigw-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body data-page="playground">
+  <div id="site-header"></div>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="eyebrow" data-i18n="pg.eyebrow">Interactive testing</span>
+        <h1 data-i18n="pg.title">API Playground</h1>
+        <p class="section-sub" data-i18n-html="pg.subtitle">Send real requests to your deployed gateway and inspect the exact JSON it returns. Press <kbd class="code-inline">Ctrl</kbd> + <kbd class="code-inline">Enter</kbd> to send.</p>
+      </div>
+    </section>
+
+    <div class="container pg-grid">
+      <!-- ============ FORM ============ -->
+      <div class="pg-form">
+        <div id="pg-banner"></div>
+        <div class="card" style="padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="small muted" data-i18n="st.base">API Base URL (auto-detected):</span>
+          <code class="code-inline live-base" style="font-size:.82rem">detecting…</code>
+          <span class="small muted server-base-wrap" style="display:none">· server confirms: <code class="code-inline server-base" style="font-size:.82rem"></code></span>
+        </div>
+        <form class="card" id="pg-form" novalidate>
+          <div class="field">
+            <label class="label" for="f-provider" data-i18n="pg.provider">Provider</label>
+            <select class="select" id="f-provider" name="provider">
+              <option value="" data-i18n="pg.autoOption">⚡ Auto — smart failover (recommended)</option>
+              <option value="openrouter">OpenRouter (openrouter)</option>
+              <option value="poolside">Poolside AI (poolside)</option>
+              <option value="custom">Custom (custom)</option>
+            </select>
+            <p class="small muted" id="provider-hint" style="margin-top:6px;min-height:18px"></p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="f-model"><span data-i18n="pg.model">Model</span> <span class="opt" data-i18n="pg.modelOpt">— blank = provider default</span></label>
+            <input class="input mono" id="f-model" name="model" list="model-list" placeholder="e.g. z-ai/glm-5.2:free" autocomplete="off" spellcheck="false" />
+            <datalist id="model-list"></datalist>
+          </div>
+
+          <div class="field" id="field-system">
+            <label class="label" for="f-system"><span data-i18n="pg.system">System prompt</span> <span class="opt" data-i18n="pg.optional">optional</span></label>
+            <textarea class="textarea" id="f-system" name="system_prompt" rows="2" placeholder="e.g. You are a concise senior Go developer."></textarea>
+          </div>
+
+          <div class="field" id="field-message">
+            <label class="label" for="f-message" data-i18n="pg.message">Message</label>
+            <textarea class="textarea" id="f-message" name="message" rows="5" placeholder="Ask anything…" maxlength="8000" required></textarea>
+            <p class="small muted" style="margin-top:6px"><span id="msg-count">0</span> / 8000 characters</p>
+          </div>
+
+          <div class="field" id="field-multiturn" style="display:none">
+            <label class="label" for="f-messages-json">messages[] <span class="opt">JSON array</span></label>
+            <textarea class="textarea mono" id="f-messages-json" rows="6" spellcheck="false">[
+  { "role": "system", "content": "You are a helpful assistant." },
+  { "role": "user", "content": "Explain HTTP 429 in one sentence." }
+]</textarea>
+          </div>
+
+          <div class="field switch-row" style="padding-top:2px">
+            <span class="label mb-0">Multi-turn mode <span class="opt">(messages[] instead of message)</span></span>
+            <label class="switch"><input type="checkbox" id="f-multiturn" /><span class="slider"></span></label>
+          </div>
+
+          <div class="field">
+            <label class="label" for="f-temp">Temperature</label>
+            <div class="range-row">
+              <input type="range" id="f-temp" name="temperature" min="0" max="2" step="0.1" value="0.7" />
+              <span class="range-val" id="temp-val">0.7</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="f-maxtokens">max_tokens <span class="opt">optional, 1–8192</span></label>
+            <input class="input mono" type="number" id="f-maxtokens" name="max_tokens" min="1" max="8192" placeholder="provider decides" />
+          </div>
+
+          <button class="btn btn-primary btn-lg" type="submit" id="send-btn" style="width:100%">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            <span id="send-label">Send request</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- ============ RESPONSE ============ -->
+      <div class="resp-card">
+        <div class="card" style="height:100%">
+          <div class="resp-head">
+            <span class="resp-title">Response</span>
+            <span id="resp-chips" style="display:inline-flex;gap:8px;flex-wrap:wrap"></span>
+          </div>
+          <div id="resp-area">
+            <div class="resp-empty">
+              <span class="big" aria-hidden="true">⌘</span>
+              <p class="mb-0">Configure the request on the left and hit <strong>Send request</strong>.<br />The raw JSON response will appear here.</p>
+            </div>
+          </div>
+          <div class="hist-list" id="hist-wrap" style="display:none">
+            <div class="resp-head" style="margin-bottom:10px">
+              <span class="resp-title">History <span class="opt">(last 8, click to expand)</span></span>
+              <button class="btn btn-ghost btn-sm" type="button" id="hist-clear">Clear</button>
+            </div>
+            <div id="hist-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="/assets/js/app-config.js" defer></script>
+  <script src="/assets/js/i18n-dict.js" defer></script>
+  <script src="/assets/js/i18n.js" defer></script>
+  <script src="/assets/js/layout.js" defer></script>
+  <script src="/assets/js/markdown.js" defer></script>
+  <script src="/assets/js/code.js" defer></script>
+  <script src="/assets/js/playground.js" defer></script>
+  <script src="/assets/js/chatbot.js" defer></script>
+</body>
+</html>

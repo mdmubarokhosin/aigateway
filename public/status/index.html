@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Status — Live Monitoring — AI Gateway API</title>
+  <meta name="description" content="Live status monitoring for the AI Gateway: health checks, latency history and per-provider connectivity tests." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>(function(){try{if(localStorage.getItem('aigw-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body data-page="status">
+  <div id="site-header"></div>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="eyebrow" data-i18n="st.eyebrow">Live monitoring</span>
+        <h1 data-i18n="st.title">API Status</h1>
+        <p class="section-sub" data-i18n="st.subtitle">Real-time health of the gateway and its providers, polled straight from your browser every 10 seconds.</p>
+      </div>
+    </section>
+
+    <div class="container" style="padding-block:44px 84px; max-width:980px">
+
+      <!-- Overall banner -->
+      <div class="card status-banner" id="status-banner">
+        <span class="status-bigdot" aria-hidden="true"></span>
+        <div>
+          <div class="status-title" id="status-title">Checking gateway…</div>
+          <div class="status-sub" id="status-sub">GET /api/v1/health</div>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <label class="switch" title="Auto-refresh every 10 s">
+            <input type="checkbox" id="auto-refresh" checked />
+            <span class="slider"></span>
+          </label>
+          <span class="small muted" data-i18n="st.auto">auto</span>
+          <button class="btn btn-ghost btn-sm" id="refresh-now" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+            <span data-i18n="st.refresh">Refresh</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Auto-detected environment info -->
+      <div class="card" style="padding:12px 20px;margin-top:14px;display:flex;gap:18px;flex-wrap:wrap;align-items:center">
+        <span class="small muted" data-i18n="st.base">API Base URL (auto-detected):</span>
+        <code class="code-inline live-base" style="font-size:.85rem">detecting…</code>
+        <span class="small muted">· <span data-i18n="st.failover">Auto-failover:</span></span>
+        <span class="meta-chip ok" id="status-failover">checking…</span>
+        <span class="small muted">· <span data-i18n="st.defaultProvider">Default provider:</span></span>
+        <code class="code-inline" id="status-default-provider" style="font-size:.85rem">—</code>
+      </div>
+
+      <!-- Stat tiles -->
+      <div class="stats-grid">
+        <div class="stat-tile">
+          <div class="stat-value" id="stat-latency">—</div>
+          <div class="stat-label" data-i18n="st.latency">API latency (last)</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value" id="stat-avg">—</div>
+          <div class="stat-label" data-i18n="st.avgLatency">Avg latency</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value" id="stat-checks">0</div>
+          <div class="stat-label" data-i18n="st.checks">Checks this session</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value" id="stat-version">—</div>
+          <div class="stat-label" data-i18n="st.version">Gateway version</div>
+        </div>
+      </div>
+
+      <!-- Latency chart -->
+      <div class="card">
+        <div class="resp-head" style="margin-bottom:8px">
+          <span class="resp-title" data-i18n="st.chartTitle">Health-check latency — last 40 checks</span>
+          <span class="small muted mono" id="spark-updated"></span>
+        </div>
+        <div class="spark-wrap" id="spark-wrap">
+          <svg class="spark-svg" id="spark" viewBox="0 0 600 130" preserveAspectRatio="none" role="img" aria-label="Latency chart"></svg>
+        </div>
+        <p class="small muted" style="margin:8px 0 0" data-i18n="st.waiting">Waiting for enough data points…</p>
+      </div>
+
+      <!-- Providers -->
+      <div class="mt-44">
+        <div class="section-head" style="margin-bottom:24px">
+          <h2 class="section-title" style="font-size:1.5rem" data-i18n="st.providers">Providers</h2>
+          <p class="section-sub small" data-i18n-html="st.providersSub">Configuration state is live from <code class="code-inline">GET /api/v1/providers</code>. "Test" sends a tiny real chat request (max 8 tokens) to verify the full chain.</p>
+        </div>
+        <div class="grid-2" id="providers-grid">
+          <div class="card"><p class="muted small" data-i18n="st.loadingProviders">Loading providers…</p></div>
+        </div>
+      </div>
+
+      <div class="bn" style="margin-top:40px">
+        <span class="bn-tag">বাংলা ব্যাখ্যা</span>
+        <p>এই পেজটি প্রতি ১০ সেকেন্ডে স্বয়ংক্রিয়ভাবে <code>/api/v1/health</code> চেক করে — গ্রিন মানে গেটওয়ে চলছে। প্রতিটি provider-এর "Test" বাটন একটি ছোট আসল রিকোয়েস্ট পাঠায়; সফল হলে লেটেন্সি (ms) দেখাবে, ব্যর্থ হলে এরর কোড ও সমাধানের ইঙ্গিত দেখাবে। নোট: "key not set" দেখালে সার্ভারে সংশ্লিষ্ট environment variable যোগ করে রিডিপ্লয় করতে হবে।</p>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="/assets/js/app-config.js" defer></script>
+  <script src="/assets/js/i18n-dict.js" defer></script>
+  <script src="/assets/js/i18n.js" defer></script>
+  <script src="/assets/js/layout.js" defer></script>
+  <script src="/assets/js/markdown.js" defer></script>
+  <script src="/assets/js/code.js" defer></script>
+  <script src="/assets/js/status.js" defer></script>
+  <script src="/assets/js/chatbot.js" defer></script>
+</body>
+</html>

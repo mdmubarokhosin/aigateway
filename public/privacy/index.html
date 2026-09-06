@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — AI Gateway API</title>
+  <meta name="description" content="Short and honest privacy policy: what the AI Gateway stores (almost nothing), what stays in your browser, and how chat messages are handled." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>(function(){try{if(localStorage.getItem('aigw-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body data-page="privacy">
+  <div id="site-header"></div>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="eyebrow" data-i18n="priv.eyebrow">Legal</span>
+        <h1 data-i18n="priv.title">Privacy Policy</h1>
+        <p class="section-sub" data-i18n="priv.updated">Last updated: September 2026 · v1.3.0</p>
+        <p class="section-sub" data-i18n="priv.sub">Short and honest: this gateway stores almost nothing. Here is exactly what happens with data.</p>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:40px">
+      <div class="container" style="max-width:760px">
+        <div class="doc-section" style="margin-bottom:34px">
+          <h2 data-i18n="priv.s1.h">Overview</h2>
+          <p data-i18n="priv.s1.b">This site is a static documentation site plus a serverless API running on Cloudflare Pages. There are no user accounts, no sign-ups and no third-party analytics scripts. We do not build advertising profiles and we do not sell data — there is no data to sell.</p>
+        </div>
+        <div class="doc-section" style="margin-bottom:34px">
+          <h2 data-i18n="priv.s2.h">What is stored in your browser</h2>
+          <p data-i18n="priv.s2.b">Your theme (light/dark) and language (Bangla/English) choices are saved in your browser’s localStorage so the site remembers them. Playground request history and the chatbot conversation live only in your current browser tab/session and disappear when you clear them or close the tab. None of this is transmitted to us for tracking.</p>
+        </div>
+        <div class="doc-section" style="margin-bottom:34px">
+          <h2 data-i18n="priv.s3.h">Chat messages</h2>
+          <p data-i18n="priv.s3.b">When you send a prompt to the gateway (playground, chatbot, /ask or Telegram), the gateway forwards it to the upstream AI provider to generate a reply. The gateway itself does not persist your prompts or the replies. Storage, logging and retention policies of the upstream provider you are using apply on their side — review them before sending sensitive content.</p>
+        </div>
+        <div class="doc-section" style="margin-bottom:34px">
+          <h2 data-i18n="priv.s4.h">API keys</h2>
+          <p data-i18n="priv.s4.b">Provider API keys live exclusively in server-side environment variables on Cloudflare. They are never embedded in pages, never sent to browsers, and never included in the public source code. The env-setup page generates a local import file entirely inside your browser — keys typed there never leave your device.</p>
+        </div>
+        <div class="doc-section" style="margin-bottom:34px">
+          <h2 data-i18n="priv.s5.h">Third parties</h2>
+          <p data-i18n="priv.s5.b">Hosting and edge delivery: Cloudflare (their network processes request metadata by necessity). AI generation: whichever provider answers your request (OpenRouter, OpenCode Zen, Poolside AI or your custom endpoint). The Admin Panel talks directly to GitHub’s API with the token you paste — that token stays in your browser.</p>
+        </div>
+        <div class="doc-section">
+          <h2 data-i18n="priv.s6.h">Changes to this policy</h2>
+          <p data-i18n="priv.s6.b">Material changes will be listed in the changelog with a new version number. Questions or concerns? Open an issue on the public GitHub repository — it is the fastest way to reach the maintainer.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="/assets/js/app-config.js" defer></script>
+  <script src="/assets/js/i18n-dict.js" defer></script>
+  <script src="/assets/js/i18n.js" defer></script>
+  <script src="/assets/js/layout.js" defer></script>
+  <script src="/assets/js/markdown.js" defer></script>
+  <script src="/assets/js/code.js" defer></script>
+  <script src="/assets/js/chatbot.js" defer></script>
+</body>
+</html>

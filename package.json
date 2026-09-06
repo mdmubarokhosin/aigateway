@@ -1,0 +1,32 @@
+{
+  "name": "ai-gateway-api",
+  "version": "1.4.0",
+  "description": "Production-ready multi-provider AI gateway REST API with deep model-level automatic provider failover. Deployed on Cloudflare Pages (serverless functions + static site). Pluggable provider architecture (OpenRouter, Poolside AI, OpenCode Zen, any custom OpenAI-compatible endpoint).",
+  "type": "module",
+  "main": "src/index.js",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/build.mjs && wrangler pages dev out --compatibility-date=2025-03-01",
+    "deploy": "wrangler pages deploy out --project-name=aigateway"
+  },
+  "keywords": [
+    "ai",
+    "gateway",
+    "rest-api",
+    "openrouter",
+    "poolside",
+    "cloudflare-pages",
+    "hono",
+    "llm"
+  ],
+  "dependencies": {
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

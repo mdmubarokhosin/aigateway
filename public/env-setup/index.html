@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Env Setup | AI Gateway API</title>
+  <meta name="description" content="Complete Cloudflare Pages environment variables import file with step-by-step setup instructions." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>(function(){try{if(localStorage.getItem('aigw-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body data-page="env-setup">
+  <div id="site-header"></div>
+
+  <main>
+    <section class="hero" style="padding:88px 0 52px">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="container">
+        <span class="eyebrow" data-i18n="env.eyebrow">Admin reference — owner only</span>
+        <h1 style="line-height:1.15"><span data-i18n="env.title1">Env</span> <span class="grad-text" data-i18n="env.title2">Setup</span></h1>
+        <p class="hero-sub" style="max-width:840px" data-i18n-html="env.subtitle">
+          The complete, updated <code class="code-inline">cloudflare-env-import.env</code> file — every variable, every key,
+          ready to import into Cloudflare Pages. Follow the steps below exactly; the whole site, the API,
+          the Telegram bot and the GET endpoints are configured from this single file.
+        </p>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:10px">
+      <div class="container docs-content" style="max-width:960px">
+
+        <div class="callout" style="border-left-color:var(--err);background:var(--err-soft)">
+          <strong data-i18n="env.warnTitle">🔒 Security warning</strong>
+          <p class="small" style="margin:6px 0 0" data-i18n-html="env.warnBody">
+            This page ships with <strong>placeholders only</strong> — real API keys are never published here.
+            An earlier version did embed live keys, and GitHub push protection <strong>blocked the push</strong>:
+            anyone could read them in the page source. Use the generator below — the keys you type stay in your
+            browser only, are sent nowhere, and produce the real import file. Never commit real keys to the repo.
+          </p>
+        </div>
+
+        <h2 id="steps">1. <span data-i18n="env.s1">Import into Cloudflare Pages (exact clicks)</span></h2>
+        <ol>
+          <li data-i18n-html="env.s1a">Open <strong>dash.cloudflare.com → Workers &amp; Pages → aigateway</strong>.</li>
+          <li data-i18n-html="env.s1b">Go to <strong>Settings → Variables and Secrets</strong>.</li>
+          <li data-i18n-html="env.s1c">Click <strong>+ Import .env</strong> → select the downloaded <code class="code-inline">cloudflare-env-import.env</code> file (or copy-paste the whole block below into the first variable's edit box using <em>Import .env</em> — it parses KEY=value lines). Confirm.</li>
+          <li data-i18n-html="env.s1d">Switch to the <strong>Preview</strong> environment tab on the same page and repeat the import there too.</li>
+          <li data-i18n-html="env.s1e">Redeploy: <strong>Deployments → latest deployment → ⋯ → Retry deployment</strong> (or push any commit). Variables only take effect after a deploy.</li>
+        </ol>
+
+        <h2 id="file">2. <span data-i18n="env.s2">The complete file (v1.4.0)</span></h2>
+        <p class="small muted" data-i18n-html="env.s2note">
+          The template below lists <strong>every variable</strong> with safe placeholders. Use the generator
+          right under it to stamp in your real keys and download the ready-to-import file.
+        </p>
+        <div class="codeblock" data-lang="env">
+          <div class="codeblock-head">
+            <span>cloudflare-env-import.env</span>
+            <span style="display:flex;gap:8px;align-items:center">
+              <button class="copy-btn" id="env-copy" type="button" data-i18n="env.copyFile">Copy file</button>
+            </span>
+          </div>
+          <pre><code id="env-file">…</code></pre>
+        </div>
+
+        <div class="callout env-gen-box" style="margin-top:18px;border-left-color:var(--primary);background:var(--primary-soft)">
+          <strong data-i18n="env.genTitle">🔑 Generate your real file — 100% in your browser</strong>
+          <p class="small" style="margin:6px 0 14px" data-i18n-html="env.genNote">
+            Type your two provider keys and press the button: the page builds your complete real
+            <code class="code-inline">cloudflare-env-import.env</code> and downloads it — ready for the
+            Cloudflare import in step 1. The keys never leave this page: no server, no storage, no log receives them.
+          </p>
+          <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-bottom:16px">
+            <label class="env-gen-field">
+              <span><code>OPENROUTER_API_KEY</code></span>
+              <input id="gen-or" class="env-gen-input" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…" />
+            </label>
+            <label class="env-gen-field">
+              <span><code>POOLSIDE_API_KEY</code></span>
+              <input id="gen-ps" class="env-gen-input" type="password" autocomplete="off" spellcheck="false" placeholder="sky_…" />
+            </label>
+          </div>
+          <button class="btn btn-primary" id="env-generate" type="button" data-i18n="env.genBtn">Generate &amp; download .env</button>
+        </div>
+
+        <h2 id="reference">3. <span data-i18n="env.s3">What each variable does (and where it's used)</span></h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr><th>Variable</th><th data-i18n="env.thValue">Example / value</th><th data-i18n="env.thUsed">Used by</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>APP_NAME</code> / <code>APP_VERSION</code></td><td>AI Gateway API / 1.4.0</td><td data-i18n-html="env.r1">Navbar chip, footer, <code>/api/v1/config</code>, health — one change rebrands everything.</td></tr>
+              <tr><td><code>OPENROUTER_API_KEY</code></td><td><code>sk-or-v1-…</code></td><td data-i18n="env.r2">OpenRouter chat + model catalog (server-side only).</td></tr>
+              <tr><td><code>POOLSIDE_API_KEY</code></td><td><code>sky_…</code></td><td data-i18n="env.r3">Poolside Laguna models chat + catalog.</td></tr>
+              <tr><td><code>OPENCODEZEN_API_KEY</code></td><td data-i18n="env.optional">optional</td><td data-i18n="env.r4">Enables OpenCode Zen CHAT (its model list is public without a key).</td></tr>
+              <tr><td><code>CUSTOM_BASE_URL/KEY/MODEL</code></td><td data-i18n="env.optional">optional</td><td data-i18n="env.r5">The zero-code custom provider (any OpenAI-compatible endpoint).</td></tr>
+              <tr><td><code>DEFAULT_PROVIDER</code></td><td>openrouter</td><td data-i18n="env.r6">Which provider answers when the request doesn't name one; failover starts here.</td></tr>
+              <tr><td><code>FAILOVER_*</code></td><td>true / 3 / 800 / 6 / 12</td><td data-i18n="env.r7">Deep failover: switch, max chain rounds, round pause, max models tried per provider, hard cap on total attempts. Every model of a provider is tried before moving to the next provider.</td></tr>
+              <tr><td><code>TELEGRAM_BOT_TOKEN</code></td><td><code>7216…:AAH8…</code></td><td data-i18n-html="env.r8">The Telegram bot webhook (<a href="/telegram/">/telegram guide</a>). Empty = bot disabled.</td></tr>
+              <tr><td><code>TELEGRAM_WEBHOOK_SECRET</code></td><td data-i18n="env.anyString">any random string</td><td data-i18n-html="env.r9">Secret path segment for <code>/api/telegram/&lt;secret&gt;</code> — other paths get 403.</td></tr>
+              <tr><td><code>API_SECRET_KEY</code></td><td data-i18n="env.optional">optional</td><td data-i18n-html="env.r10">Protects POST /api/v1/chat with <code>X-API-Key</code>. GET chat &amp; /ask stay open.</td></tr>
+              <tr><td><code>ALLOWED_ORIGINS</code></td><td>*</td><td data-i18n="env.r11">CORS allow-list (who may call your API from browsers).</td></tr>
+              <tr><td><code>RATE_LIMIT_*</code> / <code>CHAT_RATE_LIMIT_*</code></td><td>100 / 30</td><td data-i18n="env.r12">Per-IP request caps for the whole API and for chat specifically.</td></tr>
+              <tr><td><code>MODELS_CACHE_TTL_MS</code></td><td>21600000</td><td data-i18n="env.r13">How long the auto-fetched model catalog is cached (6 h).</td></tr>
+              <tr><td><code>APP_URL</code> / <code>API_BASE_URL</code></td><td>pages.dev URL / empty</td><td data-i18n="env.r14">Attribution header + optional base-URL override (leave empty = auto-detect).</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="after">4. <span data-i18n="env.s4">After importing — verify in 60 seconds</span></h2>
+        <ol>
+          <li data-i18n-html="env.v1">Open <code class="code-inline">/api/v1/config</code> → should show <code>version: 1.4.0</code> and your base URL.</li>
+          <li data-i18n-html="env.v2">Click <a href="/ask?prompt=Say%20GATEWAY-OK">/ask?prompt=Say GATEWAY-OK</a> → JSON answer straight in the browser.</li>
+          <li data-i18n-html="env.v3">Open <a href="/status/">/status/</a> → provider tiles should be live.</li>
+          <li data-i18n-html="env.v4">If you set the Telegram vars, run the <code class="code-inline">setWebhook</code> command from the <a href="/telegram/">Telegram page</a> and message your bot.</li>
+        </ol>
+
+        <div class="callout" style="margin-top:22px">
+          <strong data-i18n="env.faqTitle">Common issues</strong>
+          <ul class="small" style="margin:8px 0 0;padding-left:20px">
+            <li data-i18n-html="env.f1"><strong>UPSTREAM_AUTH_ERROR</strong> → the provider key is wrong/expired: update it here and redeploy.</li>
+            <li data-i18n-html="env.f2"><strong>Variables changed but nothing happened</strong> → you forgot the redeploy (step 1e).</li>
+            <li data-i18n-html="env.f3"><strong>Import button missing</strong> → use the classic "Add variables" flow and paste each KEY=value, or update Cloudflare dashboard language/permissions — the Import .env button exists on all current Pages projects.</li>
+            <li data-i18n-html="env.f4"><strong>"Variables are managed through wrangler.toml"</strong> → a <code>wrangler.toml</code> was added back to the repo. Delete it, commit, redeploy — dashboard variables become editable again. This project ships WITHOUT that file on purpose.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="/assets/js/app-config.js" defer></script>
+  <script src="/assets/js/i18n-dict.js" defer></script>
+  <script src="/assets/js/i18n.js" defer></script>
+  <script src="/assets/js/layout.js" defer></script>
+  <script src="/assets/js/markdown.js" defer></script>
+  <script src="/assets/js/code.js" defer></script>
+  <script src="/assets/js/chatbot.js" defer></script>
+  <script>
+    /* Placeholder template — NO real keys (repo/push safe).
+       The owner generates the real cloudflare-env-import.env IN THE BROWSER:
+       typed keys stay local, nothing is uploaded or stored anywhere. */
+    (function () {
+      'use strict';
+      var TPL = [
+        '# ============================================================',
+        '# AI GATEWAY API — Cloudflare Pages "Variables and secrets" IMPORT FILE',
+        '# (Settings > Variables and secrets > Import .env  ->  Production AND Preview)',
+        '# v1.4.0 — site-wide design unification + deep model-level failover + Telegram bot + GET /ask',
+        '# ============================================================',
+        '',
+        '# --- Branding (change here -> every page + endpoint reflects it) ---',
+        'APP_NAME=AI Gateway API',
+        'APP_VERSION=1.4.0',
+        '',
+        '# --- Automatic provider failover ---',
+        'FAILOVER_ENABLED=true',
+        'FAILOVER_MAX_ROUNDS=3',
+        'FAILOVER_RETRY_DELAY_MS=800',
+        '',
+        '# --- DEEP failover: try EVERY model of a provider before switching ---',
+        'FAILOVER_MODELS_MAX=6',
+        'FAILOVER_MAX_ATTEMPTS=12',
+        '',
+        '# --- Routing ---',
+        'DEFAULT_PROVIDER=openrouter',
+        '',
+        '# --- Provider API keys (SERVER-SIDE ONLY) ---',
+        'OPENROUTER_API_KEY=__OPENROUTER_KEY__',
+        'OPENROUTER_MODEL=z-ai/glm-5.2:free',
+        '',
+        '# OpenCode Zen: catalog is PUBLIC without a key; add key to enable ZEN CHAT.',
+        'OPENCODEZEN_API_KEY=',
+        'OPENCODEZEN_MODEL=deepseek-v4-flash-free',
+        '',
+        'POOLSIDE_API_KEY=__POOLSIDE_KEY__',
+        'POOLSIDE_MODEL=poolside/laguna-s-2.1',
+        '',
+        'CUSTOM_BASE_URL=',
+        'CUSTOM_API_KEY=',
+        'CUSTOM_MODEL=',
+        '',
+        '# --- Telegram bot (webhook: /api/telegram/<SECRET>) --- guide: /telegram/',
+        'TELEGRAM_BOT_TOKEN=',
+        'TELEGRAM_WEBHOOK_SECRET=',
+        'TELEGRAM_BOT_USERNAME=',
+        'TELEGRAM_MAX_TOKENS=1200',
+        '',
+        '# --- Protect your own API (optional) — GET chat & /ask stay open ---',
+        'API_SECRET_KEY=',
+        '',
+        '# --- CORS ---',
+        'ALLOWED_ORIGINS=*',
+        '',
+        '# --- Rate limiting ---',
+        'RATE_LIMIT_WINDOW_MS=900000',
+        'RATE_LIMIT_MAX=100',
+        'CHAT_RATE_LIMIT_WINDOW_MS=60000',
+        'CHAT_RATE_LIMIT_MAX=30',
+        '',
+        '# --- Validation & upstream behavior ---',
+        'MAX_MESSAGE_LENGTH=8000',
+        'MAX_MESSAGES=50',
+        'MAX_TOKENS_LIMIT=8192',
+        'PROVIDER_TIMEOUT_MS=60000',
+        '',
+        '# --- Live model catalog cache (6 h) ---',
+        'MODELS_CACHE_TTL_MS=21600000',
+        '',
+        '# --- Misc ---',
+        'API_BASE_URL=',
+        'APP_URL=https://aigatewaybd.pages.dev',
+        'NODE_ENV=production',
+        'NODE_VERSION=22',
+        ''
+      ].join('\n');
+
+      function tr(key, fallback) { return window.I18N ? window.I18N.t(key) : fallback; }
+
+      function copyText(text, btn) {
+        var done = function () {
+          var old = btn.textContent;
+          btn.textContent = tr('common.copied', 'Copied!');
+          setTimeout(function () { btn.textContent = old; }, 1600);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, done);
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); } catch (e) { /* ignore */ }
+          ta.remove();
+          done();
+        }
+      }
+
+      var codeEl = document.getElementById('env-file');
+      var copyBtn = document.getElementById('env-copy');
+      var genBtn = document.getElementById('env-generate');
+      var orIn = document.getElementById('gen-or');
+      var psIn = document.getElementById('gen-ps');
+
+      codeEl.textContent = TPL;
+      copyBtn.addEventListener('click', function () { copyText(TPL, copyBtn); });
+
+      genBtn.addEventListener('click', function () {
+        var orKey = (orIn.value || '').trim();
+        var psKey = (psIn.value || '').trim();
+        var real = TPL
+          .replace('__OPENROUTER_KEY__', orKey || 'PASTE_YOUR_OPENROUTER_KEY_HERE')
+          .replace('__POOLSIDE_KEY__', psKey || 'PASTE_YOUR_POOLSIDE_KEY_HERE');
+        var blob = new Blob([real], { type: 'text/plain;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'cloudflare-env-import.env';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+        var old = genBtn.textContent;
+        genBtn.textContent = tr('env.genDone', 'Downloaded — import it in Cloudflare ✓');
+        setTimeout(function () { genBtn.textContent = old; }, 2600);
+      });
+    })();
+  </script>
+</body>
+</html>

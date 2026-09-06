@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Gateway API — One REST API for OpenRouter, Poolside AI &amp; Any Custom Provider</title>
+  <meta name="description" content="Production-ready multi-provider AI gateway. One POST /api/v1/chat endpoint routes to OpenRouter, Poolside AI, or any OpenAI-compatible provider. Deploy free on Cloudflare Pages." />
+  <meta name="keywords" content="AI gateway, REST API, OpenRouter, Poolside AI, OpenAI-compatible, Cloudflare Pages, failover, LLM API" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="AI Gateway API" />
+  <meta property="og:title" content="AI Gateway API — One AI API. Every provider." />
+  <meta property="og:description" content="One POST /api/v1/chat endpoint with deep model-level auto-failover across OpenRouter, Poolside AI and any OpenAI-compatible provider. Free on Cloudflare Pages." />
+  <meta property="og:url" content="https://aigatewaybd.pages.dev/" />
+  <meta property="og:image" content="https://aigatewaybd.pages.dev/favicon.svg" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="AI Gateway API — One AI API. Every provider." />
+  <meta name="twitter:description" content="Multi-provider AI gateway with deep model-level auto-failover. Free on Cloudflare Pages." />
+  <link rel="canonical" href="https://aigatewaybd.pages.dev/" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>(function(){try{if(localStorage.getItem('aigw-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body data-page="home">
+  <div id="site-header"></div>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="hero-orb o1" aria-hidden="true"></div>
+      <div class="hero-orb o2" aria-hidden="true"></div>
+      <div class="hero-orb o3" aria-hidden="true"></div>
+      <div class="hero-orb o4" aria-hidden="true"></div>
+      <div class="hero-orb o5" aria-hidden="true"></div>
+      <div class="container">
+        <div class="hero-badge fade-up">
+          <span class="pill sdot-ok" id="hero-status"><span class="sdot"></span><span id="hero-status-text">checking API…</span></span>
+        </div>
+        <h1 class="fade-up d1"><span data-i18n="hero.title1">One AI API.</span><br /><span class="grad-text" data-i18n="hero.title2">Every provider.</span></h1>
+        <p class="hero-sub fade-up d2" data-i18n-html="hero.sub">
+          A production-ready REST gateway: send one <code class="code-inline">POST /api/v1/chat</code> request and route it to
+          <strong>OpenRouter</strong>, <strong>Poolside AI</strong>, or <strong>any OpenAI-compatible provider</strong> —
+          if a provider errors, the gateway <strong>automatically fails over to the next one</strong> until a response arrives.
+          Typed errors, rate limiting and zero key exposure included.
+        </p>
+        <div class="hero-actions fade-up d2">
+          <a class="btn btn-primary btn-lg" href="/playground/">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            <span data-i18n="hero.playground">Open API Playground</span>
+          </a>
+          <a class="btn btn-ghost btn-lg" href="/docs/" data-i18n="hero.docs">Read the Docs</a>
+        </div>
+        <div class="hero-pills fade-up d3">
+          <span class="pill"><span class="sdot" style="background:var(--ok)"></span>OpenRouter</span>
+          <span class="pill"><span class="sdot" style="background:#8b5cf6"></span>OpenCode Zen</span>
+          <span class="pill"><span class="sdot" style="background:var(--primary)"></span>Poolside AI</span>
+          <span class="pill"><span class="sdot" style="background:var(--warn)"></span><span data-i18n="hero.custom">Any custom provider</span></span>
+        </div>
+
+        <!-- Terminal mock -->
+        <div class="terminal fade-up d3" role="img" aria-label="Example request and response">
+          <div class="terminal-head">
+            <span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>
+            <span class="terminal-title">POST /api/v1/chat</span>
+            <span class="terminal-status">200 OK · 812 ms</span>
+          </div>
+          <div class="terminal-body">
+            <span class="tk-c">// request — no provider field? Auto mode picks the whole chain</span><br />
+            <span class="tk-p">{</span> <span class="tk-k">"message"</span><span class="tk-p">:</span> <span class="tk-s">"What are channels in Go?"</span> <span class="tk-p">}</span><br />
+            <br />
+            <span class="tk-c">// openrouter was rate-limited -> auto-failover -> poolside answered</span><br />
+            <span class="tk-p">{</span> <span class="tk-k">"success"</span><span class="tk-p">:</span> <span class="tk-ok">true</span><span class="tk-p">,</span> <span class="tk-k">"provider"</span><span class="tk-p">:</span> <span class="tk-s">"poolside"</span><span class="tk-p">,</span> <span class="tk-k">"reply"</span><span class="tk-p">:</span> <span class="tk-s">"Channels are typed conduits…"</span><span class="tk-p">,</span><br />
+            &nbsp;&nbsp;<span class="tk-k">"failover"</span><span class="tk-p">:</span> <span class="tk-p">{</span> <span class="tk-k">"attempts"</span><span class="tk-p">:</span> <span class="tk-p">[{</span> <span class="tk-k">"provider"</span><span class="tk-p">:</span> <span class="tk-s">"openrouter"</span><span class="tk-p">,</span> <span class="tk-k">"code"</span><span class="tk-p">:</span> <span class="tk-s">"UPSTREAM_RATE_LIMIT"</span> <span class="tk-p">}]</span> <span class="tk-p">}</span> <span class="tk-p">}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LIVE STATS BAND ============ -->
+    <section class="section" style="padding-block:34px 0">
+      <div class="container">
+        <div class="stats-band" id="stats-band">
+          <div class="stat-cell">
+            <div class="stat-num" id="stat-models">—</div>
+            <div class="stat-lbl" data-i18n="stat.modelsLbl">Live models</div>
+            <span class="stat-sub" data-i18n="stat.modelsSub">auto-fetched catalog</span>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-num" id="stat-providers">—</div>
+            <div class="stat-lbl" data-i18n="stat.providersLbl">AI providers</div>
+            <span class="stat-sub" data-i18n="stat.providersSub">pluggable adapters</span>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-num" id="stat-codes">16</div>
+            <div class="stat-lbl" data-i18n="stat.codesLbl">Typed error codes</div>
+            <span class="stat-sub" data-i18n="stat.codesSub">one consistent envelope</span>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-num" id="stat-uptime">99.9%</div>
+            <div class="stat-lbl" data-i18n="stat.uptimeLbl">Edge uptime</div>
+            <span class="stat-sub" data-i18n="stat.uptimeSub">Cloudflare global network</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MODELS MARQUEE ============ -->
+    <div class="marquee" id="models-marquee" aria-hidden="true" style="margin-top:34px">
+      <div class="marquee-track" id="marquee-track"></div>
+    </div>
+
+    <!-- ============ PROVIDERS (live) ============ -->
+    <section class="section section-alt">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow" data-i18n="home.providersEyebrow">Live provider registry</span>
+          <h2 class="section-title" data-i18n="home.providersTitle">Pluggable provider architecture</h2>
+          <p class="section-sub" data-i18n-html="home.providersSub">
+            Every provider is a small adapter object. The three built-ins below are ready to use, and the
+            <a href="/custom-provider/">custom provider system</a> accepts any OpenAI-compatible endpoint with zero code.
+          </p>
+        </div>
+        <div class="grid-3" id="providers-grid">
+          <div class="card"><p class="muted small" data-i18n="home.loadingProviders">Loading live provider status…</p></div>
+        </div>
+        <p class="text-center small muted" style="margin-top:22px">
+          <span data-i18n-html="home.statusNote">Status is fetched live from <code class="code-inline">GET /api/v1/providers</code> ·
+          <a href="/endpoints/">see all endpoints</a></span>
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ FEATURES ============ -->
+    <section class="section">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow" data-i18n="home.featuresEyebrow">Why this gateway</span>
+          <h2 class="section-title" data-i18n="home.featuresTitle">Everything a production AI API needs</h2>
+          <p class="section-sub" data-i18n="home.featuresSub">Built on Hono for Cloudflare Pages Functions, runnable anywhere Node.js 18+ runs.</p>
+        </div>
+        <div class="grid-3">
+          <div class="card card-hover feature-card">
+            <span class="icon-tile"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17V7l7 10V7"/><path d="M17 7a4 4 0 0 1 0 8h-1"/><path d="M16 15a4 4 0 0 1 0 8h-4" opacity=".4"/></svg></span>
+            <h3 data-i18n="home.f1.title">Multi-provider routing</h3>
+            <p data-i18n="home.f1.body">Switch provider or model per request with a single JSON field. Same response shape no matter who answers, so client code never changes.</p>
+          </div>
+          <div class="card card-hover feature-card">
+            <span class="icon-tile"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2.1 21 6l-4 3.9"/><path d="M3 12V9a3 3 0 0 1 3-3h14.9"/><path d="M7 21.9 3 18l4-3.9"/><path d="M21 12v3a3 3 0 0 1-3 3H3.1"/></svg></span>
+            <h3 data-i18n="home.f2.title">Automatic provider failover</h3>
+            <p data-i18n="home.f2.body">If one provider errors — rate limit, timeout, outage — the gateway instantly retries the next configured provider and keeps cycling until a response arrives. Zero code in your app.</p>
+          </div>
+          <div class="card card-hover feature-card">
+            <span class="icon-tile"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+            <h3 data-i18n="home.f3.title">Keys never leave the server</h3>
+            <p data-i18n="home.f3.body">Provider API keys live in server environment variables. Browsers and clients only ever talk to your gateway — never to upstream providers.</p>
+          </div>
+          <div class="card card-hover feature-card">
+            <span class="icon-tile"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg></span>
+            <h3 data-i18n="home.f4.title">Zero-code custom providers</h3>
+            <p data-i18n-html="home.f4.body">Point <code class="code-inline">CUSTOM_BASE_URL</code> at any OpenAI-compatible server — OpenAI, DeepSeek, Ollama, LM Studio, vLLM — and it becomes a first-class provider.</p>
+          </div>
+          <div class="card card-hover feature-card">
+            <span class="icon-tile"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4m0 4h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg></span>
+            <h3 data-i18n="home.f5.title">Typed errors &amp; rate limits</h3>
+            <p data-i18n-html="home.f5.body">Upstream failures map into one consistent envelope with 16 typed codes, per-IP sliding-window limits, and <code class="code-inline">Retry-After</code> hints on 429s.</p>
+          </div>
+          <div class="card card-hover feature-card">
+            <span class="icon-tile"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></span>
+            <h3 data-i18n="home.f6.title">One .env controls everything</h3>
+            <p data-i18n-html="home.f6.body">App name, version, providers, failover rounds — all env-driven. Change <code class="code-inline">.env</code> once and every page, endpoint and response reflects it after redeploy.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="section section-alt">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow" data-i18n="home.howEyebrow">How it works</span>
+          <h2 class="section-title" data-i18n="home.howTitle">Three steps from request to reply</h2>
+        </div>
+        <div class="grid-3">
+          <div class="card card-hover">
+            <span class="step-num" data-i18n="home.s1.step">01 — Request</span>
+            <h3 style="font-size:1.05rem;margin-bottom:8px" data-i18n="home.s1.title">You send one JSON call</h3>
+            <p class="small muted" data-i18n-html="home.s1.body">Your app posts a message (or a full multi-turn <code class="code-inline">messages[]</code> array) to your gateway, optionally naming a provider and model.</p>
+          </div>
+          <div class="card card-hover">
+            <span class="step-num" data-i18n="home.s2.step">02 — Gateway</span>
+            <h3 style="font-size:1.05rem;margin-bottom:8px" data-i18n="home.s2.title">Validate, route, protect</h3>
+            <p class="small muted" data-i18n="home.s2.body">The gateway validates input, applies rate limits and CORS, attaches the right server-side API key, and forwards to the chosen upstream provider.</p>
+          </div>
+          <div class="card card-hover">
+            <span class="step-num" data-i18n="home.s3.step">03 — Normalized reply</span>
+            <h3 style="font-size:1.05rem;margin-bottom:8px" data-i18n="home.s3.title">One predictable envelope</h3>
+            <p class="small muted" data-i18n-html="home.s3.body">You always get <code class="code-inline">{success, provider, reply, model, usage}</code> — or a typed error with an actionable message and retry hints.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ENDPOINTS PREVIEW + QUICK START ============ -->
+    <section class="section">
+      <div class="container grid-2" style="align-items:start">
+        <div>
+          <span class="eyebrow" data-i18n="home.surfaceEyebrow">Surface</span>
+          <h2 class="section-title" style="font-size:1.7rem" data-i18n="home.surfaceTitle">A compact, honest API surface</h2>
+          <p class="muted" style="margin-bottom:22px" data-i18n-html="home.surfaceSub">Five endpoints. No SDK required. Full reference on the <a href="/endpoints/">Endpoints</a> page · browse every model on the <a href="/models/">Models</a> page.</p>
+          <div class="card" style="padding:10px 22px">
+            <div class="endpoint-row">
+              <span class="method get">GET</span>
+              <span class="endpoint-path">/api/v1/health</span>
+              <span class="endpoint-desc" data-i18n="home.ep.health">Liveness probe — public, no auth</span>
+            </div>
+            <div class="endpoint-row">
+              <span class="method get">GET</span>
+              <span class="endpoint-path">/api/v1/providers</span>
+              <span class="endpoint-desc" data-i18n="home.ep.providers">Provider discovery &amp; config status</span>
+            </div>
+            <div class="endpoint-row">
+              <span class="method get">GET</span>
+              <span class="endpoint-path">/api/v1/models</span>
+              <span class="endpoint-desc" data-i18n="home.ep.models">Live model catalog, auto-fetched (free-only for OpenRouter/Zen)</span>
+            </div>
+            <div class="endpoint-row">
+              <span class="method get">GET</span>
+              <span class="endpoint-path">/api/v1/config</span>
+              <span class="endpoint-desc" data-i18n="home.ep.config">Runtime config + auto-detected base URL</span>
+            </div>
+            <div class="endpoint-row">
+              <span class="method get">GET</span>
+              <span class="endpoint-path">/api/v1/chat?prompt=…</span>
+              <span class="endpoint-desc" data-i18n-html="home.ep.getchat">Browser-clickable chat — try: <a class="try-link" href="/ask?prompt=Say%20hello%20in%20Bangla">/ask?prompt=…</a></span>
+            </div>
+            <div class="endpoint-row">
+              <span class="method post">POST</span>
+              <span class="endpoint-path">/api/v1/chat</span>
+              <span class="endpoint-desc" data-i18n="home.ep.chat">Chat completion with auto-failover</span>
+            </div>
+          </div>
+          <p class="small muted" style="margin-top:14px">
+            <span data-i18n-html="home.statusLink">Live uptime monitoring: <a href="/status/">API Status →</a></span>
+          </p>
+        </div>
+
+        <div>
+          <span class="eyebrow" data-i18n="home.quickEyebrow">Quick start</span>
+          <h2 class="section-title" style="font-size:1.7rem" data-i18n="home.quickTitle">Call it from anywhere</h2>
+          <p class="muted" style="margin-bottom:6px" data-i18n-html="home.quickSub">The base URL below is <strong>auto-detected</strong> from your current address — the same snippet works on localhost and in production.</p>
+          <div data-tabs>
+            <div class="tab-list" role="tablist" aria-label="Language examples">
+              <button class="tab is-active" data-tab="curl" role="tab" aria-selected="true">cURL</button>
+              <button class="tab" data-tab="js" role="tab" aria-selected="false">JavaScript</button>
+              <button class="tab" data-tab="py" role="tab" aria-selected="false">Python</button>
+            </div>
+            <div class="tab-panel is-active" data-panel="curl">
+              <div class="codeblock" data-lang="bash">
+                <div class="codeblock-head"><span>bash</span><button class="copy-btn" type="button" data-i18n="common.copy">Copy</button></div>
+                <pre><code>curl -X POST <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "What is the meaning of life?",
+    "temperature": 0.7
+  }'</code></pre>
+              </div>
+            </div>
+            <div class="tab-panel" data-panel="js">
+              <div class="codeblock" data-lang="js">
+                <div class="codeblock-head"><span>javascript</span><button class="copy-btn" type="button" data-i18n="common.copy">Copy</button></div>
+                <pre><code>const base = window.location.origin; // auto-detected API base URL
+const res = await fetch(base + "/api/v1/chat", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    message: "Write a Go function that sums a slice of ints",
+    max_tokens: 500,
+  }),
+});
+
+const data = await res.json();
+if (data.success) console.log(data.reply, "(served by", data.provider + ")");
+else console.error(data.error.code, data.error.message);</code></pre>
+              </div>
+            </div>
+            <div class="tab-panel" data-panel="py">
+              <div class="codeblock" data-lang="python">
+                <div class="codeblock-head"><span>python</span><button class="copy-btn" type="button" data-i18n="common.copy">Copy</button></div>
+                <pre><code>import requests
+
+res = requests.post(
+    "<span class="live-base">https://YOUR-DOMAIN</span>/api/v1/chat",  # auto-detected — this very domain
+    json={
+        "message": "What is the meaning of life?",
+        "temperature": 0.7,
+    },
+    timeout=60,
+)
+data = res.json()
+print(data["reply"] if data["success"] else data["error"]["message"])</code></pre>
+              </div>
+            </div>
+          </div>
+          <p class="small muted" data-i18n-html="home.morePatterns">More patterns (multi-turn, retries, error handling): <a href="/guide/">Usage &amp; Integration Guide →</a></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TESTIMONIALS ============ -->
+    <section class="section section-alt">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow" data-i18n="home.tstEyebrow">Developer love</span>
+          <h2 class="section-title" data-i18n="home.tstTitle">What builders say</h2>
+          <p class="section-sub" data-i18n="home.tstSub">Feedback from developers routing their apps through the gateway.</p>
+        </div>
+        <div class="tst-grid">
+          <div class="card card-hover tst-card">
+            <span class="tst-quote" aria-hidden="true">&rdquo;</span>
+            <div class="tst-stars" aria-hidden="true">★★★★★</div>
+            <p class="tst-text" data-i18n="home.tst1.text">“I replaced three provider SDKs with one fetch call. When OpenRouter rate-limits me, the reply still arrives from another provider — my users never notice.”</p>
+            <div class="tst-who">
+              <span class="tst-ava" aria-hidden="true">SR</span>
+              <span><span class="tst-name">S. Rahman</span><br /><span class="tst-role" data-i18n="home.tst1.role">Backend developer, Dhaka</span></span>
+            </div>
+          </div>
+          <div class="card card-hover tst-card">
+            <span class="tst-quote" aria-hidden="true">&rdquo;</span>
+            <div class="tst-stars" aria-hidden="true">★★★★★</div>
+            <p class="tst-text" data-i18n="home.tst2.text">“The deep failover is the killer feature — it doesn’t just switch providers, it walks every model until one answers. Zero code on my side.”</p>
+            <div class="tst-who">
+              <span class="tst-ava b" aria-hidden="true">TA</span>
+              <span><span class="tst-name">T. Ahmed</span><br /><span class="tst-role" data-i18n="home.tst2.role">Indie hacker, Chattogram</span></span>
+            </div>
+          </div>
+          <div class="card card-hover tst-card">
+            <span class="tst-quote" aria-hidden="true">&rdquo;</span>
+            <div class="tst-stars" aria-hidden="true">★★★★★</div>
+            <p class="tst-text" data-i18n="home.tst3.text">“Deployed on Cloudflare Pages in one afternoon. Typed errors, rate limits, Bengali docs and a Telegram bot — everything I’d have built myself.”</p>
+            <div class="tst-who">
+              <span class="tst-ava c" aria-hidden="true">MK</span>
+              <span><span class="tst-name">M. Karim</span><br /><span class="tst-role" data-i18n="home.tst3.role">CTO, startup studio</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section class="section">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow" data-i18n="home.faqEyebrow">FAQ</span>
+          <h2 class="section-title" data-i18n="home.faqTitle">Frequently asked questions</h2>
+        </div>
+        <div class="faq-list" id="faq-list">
+          <div class="faq-item">
+            <button class="faq-q" type="button" aria-expanded="false"><span data-i18n="home.faq1.q">What exactly happens when a provider fails?</span><span class="faq-icon" aria-hidden="true">+</span></button>
+            <div class="faq-a"><div class="faq-a-inner" data-i18n-html="home.faq1.a">The gateway retries <strong>every other model</strong> of that provider one by one; only when the whole provider is exhausted does it move to the next provider in the list and repeat the same walk. A hard cap (<code class="code-inline">FAILOVER_MAX_ATTEMPTS</code>) keeps latency bounded, and the response reports the real provider + model that answered.</div></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" type="button" aria-expanded="false"><span data-i18n="home.faq2.q">Is it free to run?</span><span class="faq-icon" aria-hidden="true">+</span></button>
+            <div class="faq-a"><div class="faq-a-inner" data-i18n-html="home.faq2.a">Yes — the gateway itself runs on the <strong>Cloudflare Pages free tier</strong>. You only pay whatever the upstream providers charge (OpenRouter and OpenCode Zen both have free models you can use).</div></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" type="button" aria-expanded="false"><span data-i18n="home.faq3.q">Do my API keys ever reach the browser?</span><span class="faq-icon" aria-hidden="true">+</span></button>
+            <div class="faq-a"><div class="faq-a-inner" data-i18n="home.faq3.a">Never. Keys live in server-side environment variables. Clients talk only to your gateway domain; the gateway attaches the right key server-side before forwarding the request upstream.</div></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" type="button" aria-expanded="false"><span data-i18n="home.faq4.q">Can I add my own provider or self-hosted model?</span><span class="faq-icon" aria-hidden="true">+</span></button>
+            <div class="faq-a"><div class="faq-a-inner" data-i18n-html="home.faq4.a">Two ways: set <code class="code-inline">CUSTOM_BASE_URL</code> for any OpenAI-compatible endpoint (zero code), or write a small adapter file in <code class="code-inline">src/providers/</code> for exotic APIs. Both are first-class citizens in the failover chain.</div></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" type="button" aria-expanded="false"><span data-i18n="home.faq5.q">How do I manage models and site content without editing code?</span><span class="faq-icon" aria-hidden="true">+</span></button>
+            <div class="faq-a"><div class="faq-a-inner" data-i18n="home.faq5.a">The Admin Panel gives you full CRUD over providers, models, site settings and the chatbot knowledge base — press the PUSH button and it commits straight to GitHub from your browser, which triggers an automatic redeploy.</div></div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" type="button" aria-expanded="false"><span data-i18n="home.faq6.q">Does it work with Telegram bots?</span><span class="faq-icon" aria-hidden="true">+</span></button>
+            <div class="faq-a"><div class="faq-a-inner" data-i18n-html="home.faq6.a">Yes — a webhook endpoint (<code class="code-inline">/api/telegram/&lt;SECRET&gt;</code>) ships built in. Register it once with @BotFather and your bot answers through the same failover chain. Full guide on the <a href="/telegram/">Telegram page</a>.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CTA ============ -->
+    <section class="section" style="padding-top:20px">
+      <div class="container">
+        <div class="cta-band">
+          <h2 data-i18n="home.ctaTitle">Ready to route your first request?</h2>
+          <p data-i18n="home.ctaSub">Try the interactive playground right now — no setup, no SDK, works on mobile too.</p>
+          <div class="cta-actions">
+            <a class="btn btn-white btn-lg" href="/playground/" data-i18n="home.ctaPlayground">Try the Playground</a>
+            <a class="btn btn-outline-white btn-lg" href="/guide/#deploy" data-i18n="home.ctaDeploy">Deploy to Cloudflare Pages</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="/assets/js/app-config.js" defer></script>
+  <script src="/assets/js/i18n-dict.js" defer></script>
+  <script src="/assets/js/i18n.js" defer></script>
+  <script src="/assets/js/layout.js" defer></script>
+  <script src="/assets/js/markdown.js" defer></script>
+  <script src="/assets/js/code.js" defer></script>
+  <script src="/assets/js/home.js" defer></script>
+  <script src="/assets/js/chatbot.js" defer></script>
+</body>
+</html>

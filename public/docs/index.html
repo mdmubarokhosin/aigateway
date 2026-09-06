@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Documentation — AI Gateway API</title>
+  <meta name="description" content="Complete API reference for the AI Gateway: authentication, providers, chat completions, error codes, rate limits and configuration." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>(function(){try{if(localStorage.getItem('aigw-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@100..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+</head>
+<body data-page="docs">
+  <div id="site-header"></div>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="eyebrow"><span data-i18n="docs.eyebrow">Reference</span> · <span class="js-app-version">v1.0.0</span></span>
+        <h1 data-i18n="docs.title">API Documentation</h1>
+        <p class="section-sub" data-i18n="docs.subtitle">Everything you need to integrate: endpoints, request/response formats, error codes, rate limits and configuration.</p>
+      </div>
+    </section>
+
+    <div class="container docs-layout">
+      <aside class="docs-sidebar" aria-label="Table of contents">
+        <div class="docs-nav-h" data-i18n="docs.contents">Contents</div>
+        <ul class="docs-nav" id="docs-nav">
+          <li><a href="#introduction" class="active" data-i18n="docs.h.intro">Introduction</a></li>
+          <li><a href="#quickstart" data-i18n="docs.h.quickstart">Quick start</a></li>
+          <li><a href="#auth" data-i18n="docs.h.auth">Authentication</a></li>
+          <li><a href="#providers" data-i18n="docs.h.providers">Providers</a></li>
+          <li><a href="#models" data-i18n="docs.h.modelsShort">GET /models</a></li>
+          <li><a href="#failover" data-i18n="docs.h.failoverShort">Auto-failover</a></li>
+          <li><a href="#getchat" data-i18n="docs.h.getchatShort">GET /chat + /ask</a></li>
+          <li><a href="#chat" data-i18n="docs.h.chatShort">POST /chat</a></li>
+          <li><a href="#responses" data-i18n="docs.h.responses">Responses</a></li>
+          <li><a href="#errors" data-i18n="docs.h.errors">Error codes</a></li>
+          <li><a href="#rate-limits" data-i18n="docs.h.ratelimits">Rate limits</a></li>
+          <li><a href="#runtime-config" data-i18n="docs.h.runtimeShort">Runtime config</a></li>
+          <li><a href="#admin" data-i18n="nav.admin">Admin panel</a></li>
+          <li><a href="#configuration" data-i18n="docs.h.config">Configuration</a></li>
+          <li><a href="#cors">CORS</a></li>
+          <li><a href="#deploy" data-i18n="docs.h.deploy">Deployment</a></li>
+        </ul>
+      </aside>
+
+      <div class="docs-content">
+        <!-- ============ INTRODUCTION ============ -->
+        <section class="doc-section" id="introduction">
+          <h2 data-i18n="docs.h.intro">Introduction</h2>
+          <p>
+            <strong>AI Gateway API</strong> is a multi-provider REST gateway for LLM chat completions. Instead of
+            hard-coding one vendor, you send every request to your own gateway and choose the AI provider per request.
+            The gateway validates input, applies security and rate limits, attaches the correct server-side API key,
+            and returns a normalized response.
+          </p>
+          <p>It runs on two runtimes with the exact same code:</p>
+          <ul>
+            <li><strong>Cloudflare Pages Functions</strong> (recommended) — serverless, global edge, free tier.</li>
+            <li><strong>Node.js 18+</strong> — <code class="code-inline">npm start</code> for local development or self-hosting.</li>
+          </ul>
+          <div class="bn">
+            <span class="bn-tag">বাংলা ব্যাখ্যা</span>
+            <p>এই গেটওয়ে হলো আপনার অ্যাপ ও AI provider-দের মাঝখানে থাকা একটি সুরক্ষিত মধ্যস্থতাকারী। আপনার অ্যাপ শুধু গেটওয়েকে কল করে; provider-এর API key কখনো ব্রাউজারে পাঠানো হয় না — সব key সার্ভারের environment variable-এ থাকে। একই কোড Cloudflare Pages ও Node.js-এ চলে।</p>
+          </div>
+        </section>
+
+        <!-- ============ QUICKSTART ============ -->
+        <section class="doc-section" id="quickstart">
+          <h2 data-i18n="docs.h.quickstart">Quick start</h2>
+          <ol>
+            <li><strong>Deploy the gateway</strong> (or run <code class="code-inline">npm start</code> locally) — see <a href="/guide/#deploy">the deployment guide</a>.</li>
+            <li><strong>Set at least one provider key</strong>, e.g. <code class="code-inline">OPENROUTER_API_KEY</code> or <code class="code-inline">POOLSIDE_API_KEY</code>.</li>
+            <li><strong>Send your first chat request:</strong></li>
+          </ol>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>bash</span><button class="copy-btn" type="button" data-i18n="common.copy">Copy</button></div>
+            <pre><code>curl -X POST <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{ "message": "Hello!" }'</code></pre>
+          </div>
+          <p data-i18n-html="docs.qs.get"><strong>No-code option:</strong> paste this URL in any browser and the JSON answer appears directly — <a class="try-link" href="/ask?prompt=Hello%20gateway">/ask?prompt=Hello gateway</a> (full details in <a href="#getchat">GET /api/v1/chat</a>).</p>
+          <p>
+            The base URL above is <strong>auto-detected</strong> — this same page shows your live domain when deployed
+            (<code class="code-inline">https://your-project.pages.dev</code>) and <code class="code-inline">http://localhost</code>
+            when running locally. No <code class="code-inline">provider</code> field? The gateway uses
+            <code class="code-inline">DEFAULT_PROVIDER</code> (default: <code class="code-inline">openrouter</code>) and — if that
+            provider errors — automatically fails over to the next configured one (see <a href="#failover">Auto-failover</a>).
+          </p>
+        </section>
+
+        <!-- ============ AUTH ============ -->
+        <section class="doc-section" id="auth">
+          <h2 data-i18n="docs.h.auth">Authentication</h2>
+          <p>
+            The gateway has an <em>optional</em> shared key for protecting your API from third parties. It is
+            independent of the provider keys.
+          </p>
+          <div class="table-wrap"><table class="data">
+            <thead><tr><th>Server setting</th><th>Client behavior</th></tr></thead>
+            <tbody>
+              <tr><td><code class="code-inline">API_SECRET_KEY</code> unset</td><td>Open access — anyone who knows the URL can call the API.</td></tr>
+              <tr><td><code class="code-inline">API_SECRET_KEY</code> set</td><td>Every <code class="code-inline">/api/v1/*</code> request must send the key in the <code class="code-inline">X-API-Key</code> header (or <code class="code-inline">Authorization: Bearer &lt;key&gt;</code>).</td></tr>
+            </tbody>
+          </table></div>
+          <p><code class="code-inline">GET /api/v1/health</code>, the legacy <code class="code-inline">GET /health</code> and <code class="code-inline">GET /api/v1/config</code> always stay public so uptime monitors and the docs site work.</p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>bash — authenticated request</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>curl -X POST <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_GATEWAY_KEY" \
+  -d '{ "message": "Hello!" }'</code></pre>
+          </div>
+          <p>Wrong or missing keys get <code class="code-inline">401 UNAUTHORIZED</code>. Key comparison is constant-time to prevent timing attacks.</p>
+        </section>
+
+        <!-- ============ PROVIDERS ============ -->
+        <section class="doc-section" id="providers">
+          <h2 data-i18n="docs.h.providers">Providers</h2>
+          <p>
+            A <strong>provider</strong> is any upstream AI service. Discovery endpoint:
+            <code class="code-inline">GET /api/v1/providers</code> lists every registered provider, its default model and
+            whether its key is configured. Built-ins:
+          </p>
+          <div class="table-wrap"><table class="data">
+            <thead><tr><th>id</th><th>Provider</th><th>Required env vars</th><th>Default model</th></tr></thead>
+            <tbody>
+              <tr><td><code class="code-inline">openrouter</code></td><td>OpenRouter (200+ models, free tiers)</td><td><code class="code-inline">OPENROUTER_API_KEY</code></td><td><code class="code-inline">z-ai/glm-5.2:free</code></td></tr>
+              <tr><td><code class="code-inline">opencodezen</code></td><td>OpenCode Zen (opencode.ai coding models)</td><td><code class="code-inline">OPENCODEZEN_API_KEY</code></td><td><code class="code-inline">deepseek-v4-flash-free</code></td></tr>
+              <tr><td><code class="code-inline">poolside</code></td><td>Poolside AI (Laguna code models)</td><td><code class="code-inline">POOLSIDE_API_KEY</code></td><td><code class="code-inline">poolside/laguna-s-2.1</code></td></tr>
+              <tr><td><code class="code-inline">custom</code></td><td>Any OpenAI-compatible endpoint</td><td><code class="code-inline">CUSTOM_BASE_URL</code> (+ <code class="code-inline">CUSTOM_API_KEY</code>, <code class="code-inline">CUSTOM_MODEL</code>)</td><td>from <code class="code-inline">CUSTOM_MODEL</code></td></tr>
+            </tbody>
+          </table></div>
+          <p style="margin-top:14px">Model overrides per provider: <code class="code-inline">OPENROUTER_MODEL</code>, <code class="code-inline">OPENCODEZEN_MODEL</code>, <code class="code-inline">POOLSIDE_MODEL</code> — or pass <code class="code-inline">model</code> in the request body. Adding more providers is documented on the <a href="/custom-provider/">Custom Provider page</a>.</p>
+        </section>
+
+        <!-- ============ MODELS CATALOG ============ -->
+        <section class="doc-section" id="models">
+          <h2 data-i18n="docs.h.models">GET /api/v1/models — live catalog</h2>
+          <p>
+            <code class="code-inline">GET /api/v1/models</code> <strong>auto-fetches the model list from every provider</strong> —
+            nothing is hardcoded. The gateway calls each provider's own <code class="code-inline">/models</code> endpoint in
+            parallel and applies the per-provider <strong>free-only policy</strong>:
+          </p>
+          <ul>
+            <li><strong>OpenRouter</strong> → only <code class="code-inline">:free</code> models (e.g. <code class="code-inline">z-ai/glm-5.2:free</code>).</li>
+            <li><strong>OpenCode Zen</strong> → only <code class="code-inline">-free</code> models (e.g. <code class="code-inline">deepseek-v4-flash-free</code>).</li>
+            <li><strong>Every other provider</strong> (Poolside, custom, …) → the <strong>full catalog</strong>.</li>
+          </ul>
+          <p>
+            Results are cached for <code class="code-inline">MODELS_CACHE_TTL_MS</code> (default 6 h);
+            <code class="code-inline">?refresh=1</code> re-fetches immediately and <code class="code-inline">?provider=&lt;id&gt;</code>
+            filters to one provider. A failing provider never breaks the endpoint — its error is reported inside
+            <code class="code-inline">providers[].error</code> while the rest still return data. Browse it visually on the
+            <a href="/models/">Models page</a>.
+          </p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>bash — try it</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>curl <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/models</code></pre>
+          </div>
+          <div class="bn">
+            <span class="bn-tag">বাংলা ব্যাখ্যা</span>
+            <p>এই endpoint প্রতিটি provider থেকে নিজে নিজে (auto) মডেল লিস্ট এনে দেয়। OpenRouter ও OpenCode Zen শুধু তাদের <strong>free মডেলগুলো</strong> দেখায়, বাকি সব provider-এর সম্পূর্ণ লিস্ট দেখানো হয়। ফলে নতুন মডেল যোগ হলে এখানে নিজে থেকেই চলে আসে — কোড বদলাতে হয় না।</p>
+          </div>
+        </section>
+
+        <!-- ============ AUTO-FAILOVER ============ -->
+        <section class="doc-section" id="failover">
+          <h2 data-i18n="docs.h.failover">Automatic provider failover</h2>
+          <p>
+            <strong>On by default.</strong> If the chosen provider fails for any reason — invalid key, exhausted quota,
+            rate limit, timeout, outage, malformed reply — the gateway transparently retries the <em>next configured
+            provider</em> and keeps cycling the chain (rotating the starting provider each round) until a response is
+            produced or every option is exhausted. Your client code does nothing; it just always gets an answer when at
+            least one provider is healthy.
+          </p>
+          <ol>
+            <li>The <strong>preferred provider</strong> is tried first (the request <code class="code-inline">provider</code> field, else <code class="code-inline">DEFAULT_PROVIDER</code>).</li>
+            <li>On any error, the remaining <strong>configured</strong> providers are tried in registry order.</li>
+            <li>Each new <strong>round</strong> rotates the starting provider; up to <code class="code-inline">FAILOVER_MAX_ROUNDS</code> rounds (default 3).</li>
+            <li>Permanent errors (bad key, provider not configured) are <strong>not retried</strong>; transient ones (rate limit, timeout, outage) are.</li>
+          </ol>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>success — served by the second provider after a failover</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>{
+  "success": true,
+  "provider": "poolside",
+  "reply": "Channels are typed conduits…",
+  "model": "poolside/laguna-s-2.1",
+  "usage": { "prompt_tokens": 14, "completion_tokens": 43, "total_tokens": 57 },
+  "failover": {
+    "enabled": true,
+    "attempts": [
+      { "provider": "openrouter", "status": "failed", "code": "UPSTREAM_RATE_LIMIT", "http": 429, "round": 1 }
+    ],
+    "rounds": 1,
+    "servedOnRound": 1
+  }
+}</code></pre>
+          </div>
+          <p>
+            The winning provider is also reported in the <code class="code-inline">X-AI-Gateway-Provider</code> response
+            header. Disable failover per request with <code class="code-inline">"failover": false</code> (useful for
+            per-provider health probes), or globally with <code class="code-inline">FAILOVER_ENABLED=false</code>. When
+            every provider fails you get <code class="code-inline">502 ALL_PROVIDERS_FAILED</code> with the full attempt log.
+          </p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>pin the request to a single provider (no fallback)</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>curl -X POST <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "provider": "poolside",
+    "failover": false,
+    "message": "What are channels in Go?"
+  }'</code></pre>
+          </div>
+          <div class="bn">
+            <span class="bn-tag">বাংলা ব্যাখ্যা</span>
+            <p>অটো-ফেইলওভার ডিফল্টভাবে চালু: এক provider-এ এরর হলে (rate limit, timeout, key সমস্যা, সার্ভার ডাউন) গেটওয়ে স্বয়ংক্রিয়ভাবে পরের configured provider দিয়ে চেষ্টা করে, এবং রেসপন্স না পাওয়া পর্যন্ত chain ঘুরিয়ে ঘুরিয়ে চেষ্টা চালিয়ে যায় (ডিফল্ট সর্বোচ্চ ৩ রাউন্ড)। সফল হলে রেসপন্সে <code>provider</code> ফিল্ডে কে উত্তর দিল তা এবং <code>failover.attempts</code>-এ কারা ফেইল করল তা দেখাবে। নির্দিষ্ট provider-এই আটকে রাখতে চাইলে রিকোয়েস্টে <code>"failover": false</code> দিন।</p>
+          </div>
+        </section>
+
+        <!-- ============ GET CHAT ============ -->
+        <section class="doc-section" id="getchat">
+          <h2 data-i18n="docs.h.getchat">GET /api/v1/chat — browser-clickable</h2>
+          <p data-i18n-html="docs.getchat.intro">A zero-setup entry point that shares the exact same failover core as the POST endpoint: open the URL in a browser (or integrate it anywhere a plain URL works) and the JSON answer appears directly — no headers, no body, no API key. The short alias <code class="code-inline">/ask</code> serves the identical handler: <a class="try-link" href="/ask?prompt=Say%20hello%20in%20Bangla">/ask?prompt=Say hello in Bangla</a></p>
+          <div class="table-wrap"><table class="data">
+            <thead><tr><th>Param</th><th data-i18n="ep.thDescription">Description</th></tr></thead>
+            <tbody>
+              <tr><td><code class="code-inline">prompt</code></td><td data-i18n-html="ep.getchat.p1">Required. The question (aliases: <code class="code-inline">q, text, message, p</code>).</td></tr>
+              <tr><td><code class="code-inline">provider</code> / <code class="code-inline">model</code></td><td data-i18n="ep.getchat.p2">Optional — pin one provider or a specific model.</td></tr>
+              <tr><td><code class="code-inline">system_prompt</code> / <code class="code-inline">temperature</code> / <code class="code-inline">max_tokens</code> / <code class="code-inline">failover</code></td><td data-i18n="ep.getchat.p5">Optional — same meaning as the POST body fields.</td></tr>
+              <tr><td><code class="code-inline">raw=1</code></td><td data-i18n="ep.getchat.p7">Plain-text reply only (great for scripts/spreadsheets).</td></tr>
+              <tr><td><code class="code-inline">pretty=0</code></td><td data-i18n="ep.getchat.p8">Compact JSON.</td></tr>
+            </tbody>
+          </table></div>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>GET — click to try</span><button class="copy-btn" type="button" data-i18n="common.copy">Copy</button></div>
+            <pre><code>&lt;span class="live-base"&gt;https://YOUR-DOMAIN&lt;/span&gt;/api/v1/chat?prompt=What+is+an+API+gateway%3F
+&lt;span class="live-base"&gt;https://YOUR-DOMAIN&lt;/span&gt;/ask?prompt=Write+a+haiku+about+clouds&amp;raw=1</code></pre>
+          </div>
+          <div class="bn">
+            <span class="bn-tag">বাংলা ব্যাখ্যা</span>
+            <p>এখন ব্রাউজারে সরাসরি লিংক খুললেই JSON উত্তর পাওয়া যাবে — কোনো হেডার, বডি বা API key লাগে না (key সার্ভারেই থাকে)। <code>/ask?prompt=আপনার+প্রশ্ন</code> হলো ছোট শর্টকাট রাউট; <code>&amp;raw=1</code> দিলে শুধু প্লেইন টেক্সট উত্তর মেলে। এটি যেকোনো অ্যাপ, স্প্রেডশিট বা QR কোডে ইন্টিগ্রেট করা যায়।</p>
+          </div>
+        </section>
+
+        <!-- ============ CHAT ============ -->
+        <section class="doc-section" id="chat">
+          <h2 data-i18n="docs.h.chat">POST /api/v1/chat</h2>
+          <p data-i18n="docs.chat.intro">The main endpoint. Accepts two input styles — exactly one is required.</p>
+
+          <h3>Style 1 — simple message</h3>
+          <div class="table-wrap"><table class="data">
+            <thead><tr><th>Field</th><th>Type</th><th>Rules</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code class="code-inline">message</code></td><td>string</td><td>required, non-empty, ≤ 8000 chars</td><td>The user message.</td></tr>
+              <tr><td><code class="code-inline">system_prompt</code></td><td>string</td><td>optional</td><td>System instruction for this request.</td></tr>
+            </tbody>
+          </table></div>
+
+          <h3 style="margin-top:20px">Style 2 — multi-turn conversation</h3>
+          <div class="table-wrap"><table class="data">
+            <thead><tr><th>Field</th><th>Type</th><th>Rules</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code class="code-inline">messages</code></td><td>array</td><td>required, 1–50 items</td><td>OpenAI-style turns: <code class="code-inline">{role: "system"|"user"|"assistant", content: string}</code>.</td></tr>
+            </tbody>
+          </table></div>
+
+          <h3 style="margin-top:20px">Shared optional fields</h3>
+          <div class="table-wrap"><table class="data">
+            <thead><tr><th>Field</th><th>Type</th><th>Rules</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code class="code-inline">provider</code></td><td>string</td><td>optional</td><td>Provider id. Default: <code class="code-inline">DEFAULT_PROVIDER</code> env or <code class="code-inline">openrouter</code>. Unknown ids get <code class="code-inline">400 UNKNOWN_PROVIDER</code>.</td></tr>
+              <tr><td><code class="code-inline">model</code></td><td>string</td><td>optional</td><td>Model override for this request.</td></tr>
+              <tr><td><code class="code-inline">failover</code></td><td>boolean</td><td>optional, default: server config</td><td><code class="code-inline">false</code> pins the request to one provider (no automatic fallback). See <a href="#failover">Auto-failover</a>.</td></tr>
+              <tr><td><code class="code-inline">temperature</code></td><td>number</td><td>0 – 2, default 0.7</td><td>Sampling randomness.</td></tr>
+              <tr><td><code class="code-inline">max_tokens</code></td><td>integer</td><td>1 – 8192</td><td>Upper bound on the reply length. Omitted upstream when unset.</td></tr>
+            </tbody>
+          </table></div>
+
+          <h3 style="margin-top:20px">Examples</h3>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>simple + provider + system prompt</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>curl -X POST <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "provider": "poolside",
+    "model": "poolside/laguna-s-2.1",
+    "system_prompt": "You are a concise senior Go developer.",
+    "message": "What are channels in Go?",
+    "temperature": 0.5,
+    "max_tokens": 400
+  }'</code></pre>
+          </div>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>multi-turn conversation</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>curl -X POST <span class="live-base">https://YOUR-DOMAIN</span>/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "provider": "openrouter",
+    "messages": [
+      { "role": "system",    "content": "You are a helpful assistant." },
+      { "role": "user",      "content": "Hi!" },
+      { "role": "assistant", "content": "Hello! How can I help?" },
+      { "role": "user",      "content": "Explain HTTP status codes briefly." }
+    ]
+  }'</code></pre>
+          </div>
+          <p>Validation failures return <code class="code-inline">400 VALIDATION_ERROR</code> with a <code class="code-inline">details.field</code> pointing at the problem.</p>
+        </section>
+
+        <!-- ============ RESPONSES ============ -->
+        <section class="doc-section" id="responses">
+          <h2 data-i18n="docs.h.responses">Responses</h2>
+          <h3>Success — 200</h3>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>application/json</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>{
+  "success": true,
+  "provider": "poolside",
+  "reply": "Channels are typed conduits that let goroutines exchange values safely…",
+  "model": "poolside/laguna-s-2.1",
+  "usage": { "prompt_tokens": 14, "completion_tokens": 43, "total_tokens": 57 },
+  "failover": { "enabled": true, "attempts": [], "rounds": 1, "servedOnRound": 1 }
+}</code></pre>
+          </div>
+          <ul>
+            <li><code class="code-inline">reply</code> — the assistant text, extracted from the provider response.</li>
+            <li><code class="code-inline">model</code> — the model that actually answered (echoes upstream when available).</li>
+            <li><code class="code-inline">usage</code> — token counts normalized to the OpenAI shape; <code class="code-inline">null</code> when a provider omits them.</li>
+          </ul>
+          <h3>Error — any failure</h3>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>application/json</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>{
+  "success": false,
+  "error": {
+    "code": "UPSTREAM_RATE_LIMIT",
+    "message": "OpenRouter rate limit reached (free tiers throttle temporarily). Retry shortly.",
+    "details": { "retryAfterSeconds": 5 }
+  }
+}</code></pre>
+          </div>
+        </section>
+
+        <!-- ============ ERRORS ============ -->
+        <section class="doc-section" id="errors">
+          <h2 data-i18n="docs.h.errors">Error codes</h2>
+          <p>Every failure uses the same envelope. These are all the codes the gateway can emit:</p>
+          <div class="table-wrap"><table class="data">
+            <thead><tr><th>HTTP</th><th>Code</th><th>Meaning</th><th>What to do</th></tr></thead>
+            <tbody>
+              <tr><td>400</td><td><code class="code-inline">VALIDATION_ERROR</code></td><td>Body failed validation (missing message, bad temperature…)</td><td>Fix the request; see <code class="code-inline">error.details</code>.</td></tr>
+              <tr><td>400</td><td><code class="code-inline">INVALID_JSON</code></td><td>Body is not valid JSON</td><td>Fix JSON syntax / Content-Type.</td></tr>
+              <tr><td>400</td><td><code class="code-inline">UNKNOWN_PROVIDER</code></td><td><code class="code-inline">provider</code> not in the registry</td><td>Check <code class="code-inline">GET /api/v1/providers</code>.</td></tr>
+              <tr><td>401</td><td><code class="code-inline">UNAUTHORIZED</code></td><td>Gateway key missing/incorrect (when <code class="code-inline">API_SECRET_KEY</code> set)</td><td>Send <code class="code-inline">X-API-Key</code>.</td></tr>
+              <tr><td>402</td><td><code class="code-inline">UPSTREAM_CREDITS_EXHAUSTED</code></td><td>Provider account out of credits</td><td>Top up the provider account.</td></tr>
+              <tr><td>429</td><td><code class="code-inline">RATE_LIMITED</code></td><td>Your gateway rate limit hit</td><td>Back off; see <code class="code-inline">details.retryAfterSeconds</code>.</td></tr>
+              <tr><td>429</td><td><code class="code-inline">UPSTREAM_RATE_LIMIT</code></td><td>Provider throttled (e.g. shared free pool busy)</td><td>Retry after <code class="code-inline">details.retryAfterSeconds</code>.</td></tr>
+              <tr><td>500</td><td><code class="code-inline">UPSTREAM_AUTH_ERROR</code></td><td>Provider rejected the server-side key</td><td>Fix the provider key env var, redeploy.</td></tr>
+              <tr><td>500</td><td><code class="code-inline">PROVIDER_NOT_CONFIGURED</code></td><td>Provider chosen but its env vars are missing</td><td>Set the provider's env vars (see Configuration).</td></tr>
+              <tr><td>500</td><td><code class="code-inline">NO_PROVIDER_CONFIGURED</code></td><td>No provider env var is set at all</td><td>Set at least one provider key (see Configuration).</td></tr>
+              <tr><td>502</td><td><code class="code-inline">ALL_PROVIDERS_FAILED</code></td><td>Auto-failover exhausted every configured provider</td><td>Inspect <code class="code-inline">error.details.attempts</code> for the per-provider errors.</td></tr>
+              <tr><td>500</td><td><code class="code-inline">INTERNAL_ERROR</code></td><td>Unexpected gateway bug</td><td>Check logs in the Cloudflare dashboard.</td></tr>
+              <tr><td>502</td><td><code class="code-inline">UPSTREAM_ERROR</code></td><td>Provider returned an unexpected response</td><td>Usually transient; check <code class="code-inline">error.message</code>.</td></tr>
+              <tr><td>502</td><td><code class="code-inline">NETWORK_ERROR</code></td><td>Could not reach the provider (DNS/connect)</td><td>Verify the provider base URL.</td></tr>
+              <tr><td>502</td><td><code class="code-inline">MALFORMED_UPSTREAM_RESPONSE</code></td><td>Reply missing from provider payload</td><td>Retry; if persistent, verify the model id.</td></tr>
+              <tr><td>503</td><td><code class="code-inline">UPSTREAM_UNAVAILABLE</code></td><td>Provider temporarily down (5xx)</td><td>Retry later or switch provider.</td></tr>
+              <tr><td>504</td><td><code class="code-inline">UPSTREAM_TIMEOUT</code></td><td>Provider took longer than <code class="code-inline">PROVIDER_TIMEOUT_MS</code></td><td>Raise the timeout or retry.</td></tr>
+              <tr><td>404</td><td><code class="code-inline">ROUTE_NOT_FOUND</code></td><td>Unknown API path</td><td>Check the <a href="/endpoints/">endpoint list</a>.</td></tr>
+            </tbody>
+          </table></div>
+        </section>
+
+        <!-- ============ RATE LIMITS ============ -->
+        <section class="doc-section" id="rate-limits">
+          <h2 data-i18n="docs.h.ratelimits">Rate limits</h2>
+          <div class="table-wrap"><table class="data">
+            <thead><tr><th>Scope</th><th>Default</th><th>Env override</th></tr></thead>
+            <tbody>
+              <tr><td>All <code class="code-inline">/api/v1/*</code> per IP</td><td>100 requests / 15 min</td><td><code class="code-inline">RATE_LIMIT_MAX</code>, <code class="code-inline">RATE_LIMIT_WINDOW_MS</code></td></tr>
+              <tr><td><code class="code-inline">POST /chat</code> per IP</td><td>15 requests / min</td><td><code class="code-inline">CHAT_RATE_LIMIT_MAX</code>, <code class="code-inline">CHAT_RATE_LIMIT_WINDOW_MS</code></td></tr>
+            </tbody>
+          </table></div>
+          <p style="margin-top:14px">Responses include <code class="code-inline">X-RateLimit-Limit</code> and <code class="code-inline">X-RateLimit-Remaining</code>; 429s include <code class="code-inline">Retry-After</code>.</p>
+          <div class="alert alert-info">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+            <span>On Cloudflare, the limiter is per-isolate — a soft cap ideal for abuse protection. For hard global limits, add a Cloudflare WAF rate-limiting rule.</span>
+          </div>
+        </section>
+
+        <!-- ============ RUNTIME CONFIG ============ -->
+        <section class="doc-section" id="runtime-config">
+          <h2 data-i18n="docs.h.runtime">Runtime config &amp; base URL auto-detection</h2>
+          <p>
+            <code class="code-inline">GET /api/v1/config</code> (public, no auth) returns the live server configuration.
+            The docs site calls it from every page, which is how the version badge, base URL and failover status stay in
+            sync with your environment:
+          </p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>application/json</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>{
+  "success": true,
+  "appName": "AI Gateway API",
+  "version": "1.0.0",
+  "apiBaseUrl": "https://your-project.pages.dev",
+  "defaultProvider": "openrouter",
+  "failover": { "enabled": true, "maxRounds": 3, "retryDelayMs": 800 },
+  "providers": [
+    { "id": "openrouter", "label": "OpenRouter", "configured": true, "defaultModel": "z-ai/glm-5.2:free" },
+    { "id": "poolside", "label": "Poolside AI", "configured": true, "defaultModel": "poolside/laguna-s-2.1" },
+    { "id": "custom", "label": "Custom (OpenAI-compatible)", "configured": false, "defaultModel": null }
+  ]
+}</code></pre>
+          </div>
+          <p>
+            <strong>Base URL auto-detection:</strong> <code class="code-inline">apiBaseUrl</code> is derived from the
+            incoming request itself, so the same deployment reports the correct URL on
+            <code class="code-inline">localhost</code>, on <code class="code-inline">*.pages.dev</code> and on any custom
+            domain. In the browser, pages use their own origin by default (override at build time with
+            <code class="code-inline">API_BASE_URL</code> if you host the API on a separate domain).
+          </p>
+        </section>
+
+        <!-- ============ ADMIN PANEL ============ -->
+        <section class="doc-section" id="admin">
+          <h2 data-i18n="docs.h.admin">Admin panel (GitHub-backed, full CRUD)</h2>
+          <p>
+            <a href="/admin/">/admin/</a> is an owner-only panel that manages this site's editable configuration
+            <strong>through your GitHub repository</strong>. Sign in with a repository name + branch + fine-grained
+            GitHub token (permission needed: <em>Contents: Read and write</em> on that single repository) and the panel:
+          </p>
+          <ul>
+            <li><strong>Loads everything from the repo</strong> — <code class="code-inline">config/site.json</code> (branding, announcement banner, chat-bot settings) and <code class="code-inline">config/providers.json</code> (display order, taglines, visibility).</li>
+            <li><strong>Commits every change straight back</strong> to the repo via the GitHub API — no local files, no manual git.</li>
+            <li>Cloudflare Pages then <strong>rebuilds and redeploys automatically</strong>, so admin changes go live in 1–2 minutes.</li>
+            <li>Shows recent commits touching <code class="code-inline">config/</code> so you can audit every change.</li>
+          </ul>
+          <p>
+            Security: the token stays in your browser tab (session storage) and is sent only to
+            <code class="code-inline">api.github.com</code>. Provider API keys are never editable in the panel —
+            those remain Cloudflare environment secrets.
+          </p>
+          <div class="bn">
+            <span class="bn-tag">বাংলা ব্যাখ্যা</span>
+            <p>/admin পেজে GitHub API key ও repo-এর নাম দিয়ে লগইন করুন। প্যানেলটি সরাসরি আপনার GitHub repo থেকে সব কনফিগ লোড করে, আর আপনি যা পরিবর্তন করবেন তা GitHub API-এর মাধ্যমে সাথে সাথে repo-তে commit হয়ে যাবে — তারপর Cloudflare Pages নিজে থেকেই নতুন করে build করে সাইট আপডেট করে দেবে। Token শুধু আপনার ব্রাউজার ট্যাবে থাকে, অন্য কোথাও পাঠানো হয় না।</p>
+          </div>
+        </section>
+        <section class="doc-section" id="configuration">
+          <h2 data-i18n="docs.h.config">Configuration</h2>
+          <p>All settings are environment variables — on Cloudflare you set them in the dashboard; locally put them in <code class="code-inline">.env</code> (Node) or <code class="code-inline">.dev.vars</code> (wrangler). Change a value once and every endpoint, page and badge reflects it after redeploy.</p>
+          <div class="table-wrap"><table class="data">
+            <thead><tr><th>Variable</th><th>Default</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td><code class="code-inline">OPENROUTER_API_KEY</code></td><td>—</td><td>OpenRouter key (enables <code class="code-inline">openrouter</code>).</td></tr>
+              <tr><td><code class="code-inline">OPENROUTER_MODEL</code></td><td><code class="code-inline">z-ai/glm-5.2:free</code></td><td>Default OpenRouter model.</td></tr>
+              <tr><td><code class="code-inline">OPENCODEZEN_API_KEY</code></td><td>—</td><td>OpenCode Zen key (enables <code class="code-inline">opencodezen</code> chat; its model catalog is public).</td></tr>
+              <tr><td><code class="code-inline">OPENCODEZEN_MODEL</code></td><td><code class="code-inline">deepseek-v4-flash-free</code></td><td>Default OpenCode Zen model.</td></tr>
+              <tr><td><code class="code-inline">POOLSIDE_API_KEY</code></td><td>—</td><td>Poolside AI key (enables <code class="code-inline">poolside</code>).</td></tr>
+              <tr><td><code class="code-inline">POOLSIDE_MODEL</code></td><td><code class="code-inline">poolside/laguna-s-2.1</code></td><td>Default Poolside model.</td></tr>
+              <tr><td><code class="code-inline">CUSTOM_BASE_URL</code></td><td>—</td><td>Base URL of the custom OpenAI-compatible provider.</td></tr>
+              <tr><td><code class="code-inline">CUSTOM_API_KEY</code></td><td>—</td><td>Custom provider key (optional for local runtimes).</td></tr>
+              <tr><td><code class="code-inline">CUSTOM_MODEL</code></td><td>—</td><td>Default custom model.</td></tr>
+              <tr><td><code class="code-inline">DEFAULT_PROVIDER</code></td><td><code class="code-inline">openrouter</code></td><td>Provider used when the body has none; also first in the failover chain.</td></tr>
+              <tr><td><code class="code-inline">FAILOVER_ENABLED</code></td><td><code class="code-inline">true</code></td><td>Automatic provider failover on/off.</td></tr>
+              <tr><td><code class="code-inline">FAILOVER_MAX_ROUNDS</code></td><td><code class="code-inline">3</code></td><td>How many times the chain is cycled before <code class="code-inline">ALL_PROVIDERS_FAILED</code> (1–20).</td></tr>
+              <tr><td><code class="code-inline">FAILOVER_RETRY_DELAY_MS</code></td><td><code class="code-inline">800</code></td><td>Pause between failover rounds.</td></tr>
+              <tr><td><code class="code-inline">APP_NAME</code></td><td><code class="code-inline">AI Gateway API</code></td><td>Display name shown by <code class="code-inline">/config</code>, health and the docs site.</td></tr>
+              <tr><td><code class="code-inline">APP_VERSION</code></td><td><code class="code-inline">1.0.0</code></td><td>Version badge shown everywhere (navbar, footer, docs, health).</td></tr>
+              <tr><td><code class="code-inline">API_BASE_URL</code></td><td>auto-detect</td><td>Build-time override for the docs site when the API lives on a different domain.</td></tr>
+              <tr><td><code class="code-inline">API_SECRET_KEY</code></td><td>—</td><td>Gateway shared key (optional).</td></tr>
+              <tr><td><code class="code-inline">ALLOWED_ORIGINS</code></td><td><code class="code-inline">*</code></td><td>Comma-separated CORS allow-list.</td></tr>
+              <tr><td><code class="code-inline">PROVIDER_TIMEOUT_MS</code></td><td>60000</td><td>Upstream call timeout.</td></tr>
+              <tr><td><code class="code-inline">MODELS_CACHE_TTL_MS</code></td><td>21600000 (6 h)</td><td>How long the live model catalog is cached before re-fetching from providers.</td></tr>
+              <tr><td><code class="code-inline">MAX_MESSAGE_LENGTH</code></td><td>8000</td><td>Max chars per message.</td></tr>
+              <tr><td><code class="code-inline">MAX_MESSAGES</code></td><td>50</td><td>Max items in <code class="code-inline">messages[]</code>.</td></tr>
+              <tr><td><code class="code-inline">MAX_TOKENS_LIMIT</code></td><td>8192</td><td>Upper cap for <code class="code-inline">max_tokens</code>.</td></tr>
+              <tr><td><code class="code-inline">APP_URL</td></td><td>—</td><td>Sent to OpenRouter as <code class="code-inline">HTTP-Referer</code> attribution.</td></tr>
+            </tbody>
+          </table></div>
+        </section>
+
+        <!-- ============ CORS ============ -->
+        <section class="doc-section" id="cors">
+          <h2 data-i18n="docs.h.cors">CORS</h2>
+          <p>
+            Browser calls are allowed from any origin by default (<code class="code-inline">Access-Control-Allow-Origin: *</code>),
+            with preflight <code class="code-inline">OPTIONS</code> handled automatically. To restrict to your own sites, set
+            <code class="code-inline">ALLOWED_ORIGINS</code> to a comma-separated list:
+          </p>
+          <div class="codeblock">
+            <div class="codeblock-head"><span>env</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code>ALLOWED_ORIGINS=https://mysite.com,https://app.mysite.com</code></pre>
+          </div>
+        </section>
+
+        <!-- ============ DEPLOY ============ -->
+        <section class="doc-section" id="deploy">
+          <h2 data-i18n="docs.h.deploy">Deployment</h2>
+          <p>
+            The project is built for Cloudflare Pages: build command <code class="code-inline">npm run build</code>,
+            build output <code class="code-inline">out</code>, root directory empty. The API itself runs as Pages Functions
+            from the <code class="code-inline">functions/</code> directory — no extra config needed.
+          </p>
+          <p>Step-by-step instructions (GitHub push → Pages connect → env vars) live on the <a href="/guide/#deploy">Integration Guide → Deployment</a> section.</p>
+          <div class="bn">
+            <span class="bn-tag">বাংলা ব্যাখ্যা</span>
+            <p>ডিপ্লয়মেন্ট খুবই সহজ: পুরো ফোল্ডারটি GitHub-এ push করুন → Cloudflare ড্যাশবোর্ডে Pages → Create project → আপনার repo সিলেক্ট করুন। Build command: <code>npm run build</code>, Build output: <code>out</code>, Root directory: খালি রাখুন। এরপর Settings → Environment variables-এ provider key-গুলো যোগ করুন (Production ও Preview দুটোতেই)। বিস্তারিত: Guide পেজ।</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="/assets/js/app-config.js" defer></script>
+  <script src="/assets/js/i18n-dict.js" defer></script>
+  <script src="/assets/js/i18n.js" defer></script>
+  <script src="/assets/js/layout.js" defer></script>
+  <script src="/assets/js/markdown.js" defer></script>
+  <script src="/assets/js/code.js" defer></script>
+  <script src="/assets/js/chatbot.js" defer></script>
+  <script>
+    // Sidebar scrollspy
+    (function () {
+      var links = Array.prototype.slice.call(document.querySelectorAll('#docs-nav a'));
+      var sections = links
+        .map(function (a) { return document.querySelector(a.getAttribute('href')); })
+        .filter(Boolean);
+      if (!('IntersectionObserver' in window) || !sections.length) return;
+      var current = sections[0];
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) current = entry.target;
+        });
+        links.forEach(function (a) {
+          a.classList.toggle('active', a.getAttribute('href') === '#' + current.id);
+        });
+      }, { rootMargin: '-80px 0px -60% 0px' });
+      sections.forEach(function (s) { observer.observe(s); });
+    })();
+  </script>
+</body>
+</html>
